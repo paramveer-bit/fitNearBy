@@ -17,7 +17,7 @@ export default function HomePage() {
             <p className="text-xl md:text-2xl mb-8 text-gray-100">
               Discover top-rated gyms in your area and book your fitness journey today
             </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            {/* <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Button size="lg" asChild className="bg-white text-gray-900 hover:bg-gray-100">
                 <Link href="/gyms">
                   <MapPin className="mr-2 h-5 w-5" />
@@ -31,7 +31,7 @@ export default function HomePage() {
               >
                 Learn More
               </Button>
-            </div>
+            </div> */}
           </div>
         </div>
       </section>

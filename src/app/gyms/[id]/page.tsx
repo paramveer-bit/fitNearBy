@@ -1,11 +1,17 @@
-"use client"
+"use client";
 
-import { useRef, useState } from "react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { useRef, useState } from "react";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   Dialog,
   DialogContent,
@@ -13,19 +19,36 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { MapPin, Star, Phone, Mail, Users, Award, Dumbbell } from "lucide-react"
-import Image from "next/image"
-import one from "@/assets/one.webp"
-import two from "@/assets/two.webp"
-import three from "@/assets/three.webp"
-import four from "@/assets/four.webp"
-import five from "@/assets/five.webp"
-import six from "@/assets/six.webp"
-import Logo from "@/assets/logo.jpg"    
-import GalleryPage from "@/components/Gallery"
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  MapPin,
+  Star,
+  Phone,
+  Mail,
+  Users,
+  Award,
+  Dumbbell,
+} from "lucide-react";
+import Image from "next/image";
+import one from "@/assets/one.webp";
+import two from "@/assets/two.webp";
+import three from "@/assets/three.webp";
+import four from "@/assets/four.webp";
+import five from "@/assets/five.webp";
+import six from "@/assets/six.webp";
+import Logo from "@/assets/logo.jpg";
+import GalleryPage from "@/components/Gallery";
 // Mock data - in a real app, this would come from your database
+import ReviewCard from "@/components/profile/Review";
+import TrainerCard from "@/components/gyms/TrainerCard";
+
 const mockGym = {
   id: 1,
   name: "FitZone Premium",
@@ -38,21 +61,29 @@ const mockGym = {
   logoUrl: "/placeholder.svg?height=100&width=100",
   rating: 4.8,
   reviewCount: 124,
-  images: [
-    one,
-    two,
-    three,
-    four,
-    five,
-    six,
-  ],
+  images: [one, two, three, four, five, six],
   facilities: [
-    { name: "Cardio Equipment", description: "Latest treadmills, ellipticals, and bikes" },
-    { name: "Weight Training", description: "Free weights and resistance machines" },
+    {
+      name: "Cardio Equipment",
+      description: "Latest treadmills, ellipticals, and bikes",
+    },
+    {
+      name: "Weight Training",
+      description: "Free weights and resistance machines",
+    },
     { name: "Group Classes", description: "Yoga, Pilates, Zumba, and more" },
-    { name: "Swimming Pool", description: "Olympic-size pool for swimming and aqua fitness" },
-    { name: "Sauna & Steam", description: "Relaxation and recovery facilities" },
-    { name: "Personal Training", description: "One-on-one sessions with certified trainers" },
+    {
+      name: "Swimming Pool",
+      description: "Olympic-size pool for swimming and aqua fitness",
+    },
+    {
+      name: "Sauna & Steam",
+      description: "Relaxation and recovery facilities",
+    },
+    {
+      name: "Personal Training",
+      description: "One-on-one sessions with certified trainers",
+    },
   ],
   plans: [
     {
@@ -79,7 +110,14 @@ const mockGym = {
       duration: 3,
       description: "3-month plan with 15% savings",
     },
-    { id: 4, name: "Annual", price: 399.99, type: "YEARLY", duration: 12, description: "Best value with 33% savings" },
+    {
+      id: 4,
+      name: "Annual",
+      price: 399.99,
+      type: "YEARLY",
+      duration: 12,
+      description: "Best value with 33% savings",
+    },
   ],
   trainers: [
     {
@@ -91,16 +129,22 @@ const mockGym = {
       certifications: ["NASM-CPT", "Precision Nutrition"],
       experience: 8,
       trained: 150,
+      image: "t1",
     },
     {
       id: 2,
       name: "Mike Chen",
       email: "mike@fitzonepremium.com",
       bio: "Former athlete specializing in functional fitness and sports performance.",
-      specialties: ["Functional Training", "Sports Performance", "Injury Prevention"],
+      specialties: [
+        "Functional Training",
+        "Sports Performance",
+        "Injury Prevention",
+      ],
       certifications: ["CSCS", "FMS"],
       experience: 6,
       trained: 120,
+      image: "t2",
     },
   ],
   operatingHours: [
@@ -117,40 +161,42 @@ const mockGym = {
       id: 1,
       user: { name: "John Doe" },
       rating: 5,
-      comment: "Excellent facilities and friendly staff. The equipment is always clean and well-maintained.",
+      comment:
+        "Excellent facilities and friendly staff. The equipment is always clean and well-maintained.",
       createdAt: "2024-01-15",
     },
     {
       id: 2,
       user: { name: "Jane Smith" },
       rating: 4,
-      comment: "Great gym with good variety of classes. The trainers are knowledgeable and helpful.",
+      comment:
+        "Great gym with good variety of classes. The trainers are knowledgeable and helpful.",
       createdAt: "2024-01-10",
     },
   ],
-}
+};
 
 export default function GymDetailPage({ params }: { params: { id: string } }) {
-  const [selectedPlan, setSelectedPlan] = useState<string>("")
-  const [isBookingOpen, setIsBookingOpen] = useState(false)
+  const [selectedPlan, setSelectedPlan] = useState<string>("");
+  const [isBookingOpen, setIsBookingOpen] = useState(false);
 
-  const dialogRef = useRef<HTMLDialogElement>(null)
-  const toggleDialog = () => {    
+  const dialogRef = useRef<HTMLDialogElement>(null);
+  const toggleDialog = () => {
     if (dialogRef.current) {
       if (dialogRef.current.open) {
-        dialogRef.current.close()
+        dialogRef.current.close();
       } else {
-        dialogRef.current.showModal()
+        dialogRef.current.showModal();
       }
     }
-  }
+  };
 
   const handleBooking = () => {
     // In a real app, this would handle the booking process
-    console.log("Booking gym with plan:", selectedPlan)
-    setIsBookingOpen(false)
+    console.log("Booking gym with plan:", selectedPlan);
+    setIsBookingOpen(false);
     // Show success message or redirect
-  }
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -159,7 +205,7 @@ export default function GymDetailPage({ params }: { params: { id: string } }) {
         <div className="mb-8">
           <div className="flex items-start justify-between mb-4">
             <div className="flex items-center space-x-4">
-            {/* Logo */}
+              {/* Logo */}
               <Image
                 src={Logo}
                 alt={`${mockGym.name} logo`}
@@ -169,7 +215,9 @@ export default function GymDetailPage({ params }: { params: { id: string } }) {
               />
               <div>
                 {/* Gym Address and name*/}
-                <h1 className="text-3xl font-bold text-gray-900">{mockGym.name}</h1>
+                <h1 className="text-3xl font-bold text-gray-900">
+                  {mockGym.name}
+                </h1>
                 <div className="flex items-center text-gray-600 mt-1">
                   <MapPin className="h-4 w-4 mr-1" />
                   {mockGym.address}
@@ -178,7 +226,9 @@ export default function GymDetailPage({ params }: { params: { id: string } }) {
                   <div className="flex items-center">
                     <Star className="h-5 w-5 text-yellow-400 fill-current" />
                     <span className="ml-1 font-semibold">{mockGym.rating}</span>
-                    <span className="ml-1 text-gray-600">({mockGym.reviewCount} reviews)</span>
+                    <span className="ml-1 text-gray-600">
+                      ({mockGym.reviewCount} reviews)
+                    </span>
                   </div>
                 </div>
               </div>
@@ -193,7 +243,9 @@ export default function GymDetailPage({ params }: { params: { id: string } }) {
               <DialogContent>
                 <DialogHeader>
                   <DialogTitle>Book Your Membership</DialogTitle>
-                  <DialogDescription>Choose a membership plan to get started at {mockGym.name}</DialogDescription>
+                  <DialogDescription>
+                    Choose a membership plan to get started at {mockGym.name}
+                  </DialogDescription>
                 </DialogHeader>
                 <div className="space-y-4">
                   <Select value={selectedPlan} onValueChange={setSelectedPlan}>
@@ -203,12 +255,17 @@ export default function GymDetailPage({ params }: { params: { id: string } }) {
                     <SelectContent>
                       {mockGym.plans.map((plan) => (
                         <SelectItem key={plan.id} value={plan.id.toString()}>
-                          {plan.name} - ${plan.price} ({plan.duration} month{plan.duration > 1 ? "s" : ""})
+                          {plan.name} - ${plan.price} ({plan.duration} month
+                          {plan.duration > 1 ? "s" : ""})
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
-                  <Button onClick={handleBooking} disabled={!selectedPlan} className="w-full">
+                  <Button
+                    onClick={handleBooking}
+                    disabled={!selectedPlan}
+                    className="w-full"
+                  >
                     Confirm Booking
                   </Button>
                 </div>
@@ -219,81 +276,81 @@ export default function GymDetailPage({ params }: { params: { id: string } }) {
 
         {/* Image Gallery */}
         <div className="mb-8 relative">
-            <div className="grid grid-cols-4 gap-4">
+          <div className="grid grid-cols-4 gap-4">
             {/* Large Main Image */}
-                {mockGym.images[0] && (
-                <div className="col-span-2 row-span-2 relative">
-                    <Image
-                        src={mockGym.images[0]}
-                        alt="Main gym image"
-                        fill
-                        className="object-cover rounded-lg"
-                    />
-                </div>
+            {mockGym.images[0] && (
+              <div className="col-span-2 row-span-2 relative">
+                <Image
+                  src={mockGym.images[0]}
+                  alt="Main gym image"
+                  fill
+                  className="object-cover rounded-lg"
+                />
+              </div>
             )}
 
             {/* Top Right Images */}
             {mockGym.images[1] && (
-                <div className="col-span-1 relative aspect-square">
-                    <Image
-                        src={mockGym.images[1]}
-                        alt="Gym image 2"
-                        fill
-                        className="object-cover rounded-lg"
-                    />
-                </div>
+              <div className="col-span-1 relative aspect-square">
+                <Image
+                  src={mockGym.images[1]}
+                  alt="Gym image 2"
+                  fill
+                  className="object-cover rounded-lg"
+                />
+              </div>
             )}
             {mockGym.images[2] && (
-                <div className="col-span-1 relative aspect-square">
-                    <Image
-                        src={mockGym.images[2]}
-                        alt="Gym image 3"
-                        fill
-                        className="object-cover rounded-lg"
-                    />
-                </div>
+              <div className="col-span-1 relative aspect-square">
+                <Image
+                  src={mockGym.images[2]}
+                  alt="Gym image 3"
+                  fill
+                  className="object-cover rounded-lg"
+                />
+              </div>
             )}
 
             {/* Bottom Right Images */}
             {mockGym.images[3] && (
-                <div className="col-span-1 relative aspect-square">
-                    <Image
-                        src={mockGym.images[3]}
-                        alt="Gym image 4"
-                        fill
-                        className="object-cover rounded-lg"
-                    />
-                </div>
+              <div className="col-span-1 relative aspect-square">
+                <Image
+                  src={mockGym.images[3]}
+                  alt="Gym image 4"
+                  fill
+                  className="object-cover rounded-lg"
+                />
+              </div>
             )}
             {mockGym.images[4] && (
-                <div className="col-span-1 relative aspect-square">
-                    <Image
-                        src={mockGym.images[4]}
-                        alt="Gym image 5"
-                        fill
-                        className="object-cover rounded-lg"
-                    />
-                    {mockGym.images.length > 5 && (
-                        <div className="absolute right-2 bottom-2 bg-black/60 rounded-lg flex items-center justify-center">
-                            <button className="text-white font-semibold px-4 py-2 bg-black/70 rounded-lg" onClick={toggleDialog}>
-                                +{mockGym.images.length - 5} more
-                            </button>                   
-                        </div>                        
-                    )}
-                </div>
+              <div className="col-span-1 relative aspect-square">
+                <Image
+                  src={mockGym.images[4]}
+                  alt="Gym image 5"
+                  fill
+                  className="object-cover rounded-lg"
+                />
+                {mockGym.images.length > 5 && (
+                  <div className="absolute right-2 bottom-2 bg-black/60 rounded-lg flex items-center justify-center">
+                    <button
+                      className="text-white font-semibold px-4 py-2 bg-black/70 rounded-lg"
+                      onClick={toggleDialog}
+                    >
+                      +{mockGym.images.length - 5} more
+                    </button>
+                  </div>
+                )}
+              </div>
             )}
-            </div>
-                <dialog 
-                className="my-auto w-2/3 justify-center fixed mx-auto" 
-                ref={dialogRef}
-                >
-                    <GalleryPage />
-                </dialog>  
-            
-            
+          </div>
+          <dialog
+            className="my-auto w-2/3 justify-center fixed mx-auto"
+            ref={dialogRef}
+          >
+            <GalleryPage />
+          </dialog>
         </div>
 
-            
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Main Content */}
           <div className="lg:col-span-2">
@@ -312,7 +369,9 @@ export default function GymDetailPage({ params }: { params: { id: string } }) {
                     <CardTitle>About {mockGym.name}</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <p className="text-gray-600 leading-relaxed">{mockGym.description}</p>
+                    <p className="text-gray-600 leading-relaxed">
+                      {mockGym.description}
+                    </p>
                   </CardContent>
                 </Card>
 
@@ -346,7 +405,9 @@ export default function GymDetailPage({ params }: { params: { id: string } }) {
                         </CardTitle>
                       </CardHeader>
                       <CardContent>
-                        <CardDescription>{facility.description}</CardDescription>
+                        <CardDescription>
+                          {facility.description}
+                        </CardDescription>
                       </CardContent>
                     </Card>
                   ))}
@@ -356,55 +417,7 @@ export default function GymDetailPage({ params }: { params: { id: string } }) {
               <TabsContent value="trainers" className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {mockGym.trainers.map((trainer) => (
-                    <Card key={trainer.id}>
-                      <CardHeader>
-                        <div className="flex items-center space-x-4">
-                          <Avatar className="h-16 w-16">
-                            <AvatarImage src="/placeholder.svg?height=64&width=64" />
-                            <AvatarFallback>
-                              {trainer.name
-                                .split(" ")
-                                .map((n) => n[0])
-                                .join("")}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div>
-                            <CardTitle>{trainer.name}</CardTitle>
-                            <div className="flex items-center text-sm text-gray-600 mt-1">
-                              <Users className="h-4 w-4 mr-1" />
-                              {trainer.trained} clients trained
-                            </div>
-                            <div className="flex items-center text-sm text-gray-600">
-                              <Award className="h-4 w-4 mr-1" />
-                              {trainer.experience} years experience
-                            </div>
-                          </div>
-                        </div>
-                      </CardHeader>
-                      <CardContent className="space-y-3">
-                        <p className="text-gray-600 text-sm">{trainer.bio}</p>
-                        <div>
-                          <h4 className="font-semibold text-sm mb-2">Specialties</h4>
-                          <div className="flex flex-wrap gap-1">
-                            {trainer.specialties.map((specialty, index) => (
-                              <Badge key={index} variant="secondary" className="text-xs">
-                                {specialty}
-                              </Badge>
-                            ))}
-                          </div>
-                        </div>
-                        <div>
-                          <h4 className="font-semibold text-sm mb-2">Certifications</h4>
-                          <div className="flex flex-wrap gap-1">
-                            {trainer.certifications.map((cert, index) => (
-                              <Badge key={index} variant="outline" className="text-xs">
-                                {cert}
-                              </Badge>
-                            ))}
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
+                    <TrainerCard key={trainer.id} trainer={trainer} />
                   ))}
                 </div>
               </TabsContent>
@@ -414,30 +427,37 @@ export default function GymDetailPage({ params }: { params: { id: string } }) {
                   {mockGym.plans.map((plan) => (
                     <Card key={plan.id} className="relative">
                       {plan.type === "YEARLY" && (
-                        <Badge className="absolute -top-2 left-4 bg-green-600">Best Value</Badge>
+                        <Badge className="absolute -top-2 left-4 bg-green-600">
+                          Best Value
+                        </Badge>
                       )}
                       <CardHeader>
                         <CardTitle className="flex items-center justify-between">
                           {plan.name}
-                          <span className="text-2xl font-bold">${plan.price}</span>
+                          <span className="text-2xl font-bold">
+                            ${plan.price}
+                          </span>
                         </CardTitle>
                         <CardDescription>{plan.description}</CardDescription>
                       </CardHeader>
                       <CardContent>
                         <div className="space-y-2 text-sm text-gray-600">
                           <div>
-                            Duration: {plan.duration} month{plan.duration > 1 ? "s" : ""}
+                            Duration: {plan.duration} month
+                            {plan.duration > 1 ? "s" : ""}
                           </div>
                           <div>Type: {plan.type}</div>
                           {plan.type === "YEARLY" && (
-                            <div className="text-green-600 font-semibold">Save 33% compared to monthly</div>
+                            <div className="text-green-600 font-semibold">
+                              Save 33% compared to monthly
+                            </div>
                           )}
                         </div>
                         <Button
                           className="w-full mt-4"
                           onClick={() => {
-                            setSelectedPlan(plan.id.toString())
-                            setIsBookingOpen(true)
+                            setSelectedPlan(plan.id.toString());
+                            setIsBookingOpen(true);
                           }}
                         >
                           Choose Plan
@@ -451,39 +471,7 @@ export default function GymDetailPage({ params }: { params: { id: string } }) {
               <TabsContent value="reviews" className="space-y-4">
                 <div className="space-y-6">
                   {mockGym.reviews.map((review) => (
-                    <Card key={review.id}>
-                      <CardHeader className="pb-3">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center space-x-3">
-                            <Avatar>
-                              <AvatarFallback>
-                                {review.user.name
-                                  .split(" ")
-                                  .map((n) => n[0])
-                                  .join("")}
-                              </AvatarFallback>
-                            </Avatar>
-                            <div>
-                              <div className="font-semibold">{review.user.name}</div>
-                              <div className="text-sm text-gray-600">{review.createdAt}</div>
-                            </div>
-                          </div>
-                          <div className="flex items-center">
-                            {[...Array(5)].map((_, i) => (
-                              <Star
-                                key={i}
-                                className={`h-4 w-4 ${
-                                  i < review.rating ? "text-yellow-400 fill-current" : "text-gray-300"
-                                }`}
-                              />
-                            ))}
-                          </div>
-                        </div>
-                      </CardHeader>
-                      <CardContent>
-                        <p className="text-gray-600">{review.comment}</p>
-                      </CardContent>
-                    </Card>
+                    <ReviewCard key={review.id} review={review} type={"user"} />
                   ))}
                 </div>
               </TabsContent>
@@ -498,10 +486,6 @@ export default function GymDetailPage({ params }: { params: { id: string } }) {
               </CardHeader>
               <CardContent className="space-y-3">
                 <div className="flex items-center">
-                  <Phone className="h-4 w-4 mr-3 text-gray-600" />
-                  <span>{mockGym.phone}</span>
-                </div>
-                <div className="flex items-center">
                   <Mail className="h-4 w-4 mr-3 text-gray-600" />
                   <span>{mockGym.email}</span>
                 </div>
@@ -511,7 +495,7 @@ export default function GymDetailPage({ params }: { params: { id: string } }) {
                 </div>
               </CardContent>
             </Card>
-
+            {/* Quick stats */}
             <Card>
               <CardHeader>
                 <CardTitle>Quick Stats</CardTitle>
@@ -530,11 +514,15 @@ export default function GymDetailPage({ params }: { params: { id: string } }) {
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600">Facilities</span>
-                  <span className="font-semibold">{mockGym.facilities.length}</span>
+                  <span className="font-semibold">
+                    {mockGym.facilities.length}
+                  </span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600">Trainers</span>
-                  <span className="font-semibold">{mockGym.trainers.length}</span>
+                  <span className="font-semibold">
+                    {mockGym.trainers.length}
+                  </span>
                 </div>
               </CardContent>
             </Card>
@@ -542,5 +530,31 @@ export default function GymDetailPage({ params }: { params: { id: string } }) {
         </div>
       </div>
     </div>
-  )
+  );
+}
+
+interface GymSummary {
+  id: number;
+  name: string;
+  logoUrl: string;
+}
+
+interface GymReview {
+  id: number;
+  gym: GymSummary;
+  rating: number;
+  comment: string;
+  createdAt: string; // ISO date string
+}
+
+interface Trainer {
+  id: number;
+  name: string;
+  email: string;
+  bio: string;
+  specialties: string[];
+  certifications: string[];
+  experience: number; // in years
+  trained: number; // number of clients trained
+  image: string; // assuming 't1' is a URL or imported asset path
 }
