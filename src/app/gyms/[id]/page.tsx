@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useState } from "react";
 import {
   Card,
   CardContent,
@@ -9,45 +9,17 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  MapPin,
-  Star,
-  Phone,
-  Mail,
-  Users,
-  Award,
-  Dumbbell,
-} from "lucide-react";
+import GymImages from "@/components/gyms/GymImages";
+import { MapPin, Star, Mail, Dumbbell } from "lucide-react";
 import Image from "next/image";
-import one from "@/assets/one.webp";
-import two from "@/assets/two.webp";
-import three from "@/assets/three.webp";
-import four from "@/assets/four.webp";
-import five from "@/assets/five.webp";
-import six from "@/assets/six.webp";
+import GymPlanes from "@/components/gyms/GymPlanes";
 import Logo from "@/assets/logo.jpg";
-import GalleryPage from "@/components/Gallery";
 // Mock data - in a real app, this would come from your database
 import ReviewCard from "@/components/profile/Review";
-import TrainerCard from "@/components/gyms/TrainerCard";
+import TrainerCard from "@/components/gyms/trainerCard";
+import { useParams } from "next/navigation";
+import Link from "next/link";
 
 const mockGym = {
   id: 1,
@@ -61,7 +33,6 @@ const mockGym = {
   logoUrl: "/placeholder.svg?height=100&width=100",
   rating: 4.8,
   reviewCount: 124,
-  images: [one, two, three, four, five, six],
   facilities: [
     {
       name: "Cardio Equipment",
@@ -176,27 +147,16 @@ const mockGym = {
   ],
 };
 
-export default function GymDetailPage({ params }: { params: { id: string } }) {
-  const [selectedPlan, setSelectedPlan] = useState<string>("");
-  const [isBookingOpen, setIsBookingOpen] = useState(false);
+import { UserContext } from "@/app/auth/AuthProvider";
+import React, { useContext } from "react";
+import AuthDialog from "@/components/auth";
 
-  const dialogRef = useRef<HTMLDialogElement>(null);
-  const toggleDialog = () => {
-    if (dialogRef.current) {
-      if (dialogRef.current.open) {
-        dialogRef.current.close();
-      } else {
-        dialogRef.current.showModal();
-      }
-    }
-  };
+export default function GymDetailPage() {
+  const params = useParams<{ id: string }>();
 
-  const handleBooking = () => {
-    // In a real app, this would handle the booking process
-    console.log("Booking gym with plan:", selectedPlan);
-    setIsBookingOpen(false);
-    // Show success message or redirect
-  };
+  const [dialogOpen, setDialogOpen] = useState(false);
+
+  const user = useContext(UserContext);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -234,122 +194,26 @@ export default function GymDetailPage({ params }: { params: { id: string } }) {
               </div>
             </div>
             {/* Book Now */}
-            <Dialog open={isBookingOpen} onOpenChange={setIsBookingOpen}>
-              <DialogTrigger asChild>
+            {user.user ? (
+              <Link href={`/book/${mockGym.id}`}>
                 <Button size="lg" className="bg-blue-600 hover:bg-blue-700">
                   Book Now
                 </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Book Your Membership</DialogTitle>
-                  <DialogDescription>
-                    Choose a membership plan to get started at {mockGym.name}
-                  </DialogDescription>
-                </DialogHeader>
-                <div className="space-y-4">
-                  <Select value={selectedPlan} onValueChange={setSelectedPlan}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select a membership plan" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {mockGym.plans.map((plan) => (
-                        <SelectItem key={plan.id} value={plan.id.toString()}>
-                          {plan.name} - ${plan.price} ({plan.duration} month
-                          {plan.duration > 1 ? "s" : ""})
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <Button
-                    onClick={handleBooking}
-                    disabled={!selectedPlan}
-                    className="w-full"
-                  >
-                    Confirm Booking
-                  </Button>
-                </div>
-              </DialogContent>
-            </Dialog>
+              </Link>
+            ) : (
+              <Button
+                size="lg"
+                className="bg-blue-600 hover:bg-blue-700"
+                onClick={() => setDialogOpen(true)}
+              >
+                Book Now
+              </Button>
+            )}
           </div>
         </div>
 
         {/* Image Gallery */}
-        <div className="mb-8 relative">
-          <div className="grid grid-cols-4 gap-4">
-            {/* Large Main Image */}
-            {mockGym.images[0] && (
-              <div className="col-span-2 row-span-2 relative">
-                <Image
-                  src={mockGym.images[0]}
-                  alt="Main gym image"
-                  fill
-                  className="object-cover rounded-lg"
-                />
-              </div>
-            )}
-
-            {/* Top Right Images */}
-            {mockGym.images[1] && (
-              <div className="col-span-1 relative aspect-square">
-                <Image
-                  src={mockGym.images[1]}
-                  alt="Gym image 2"
-                  fill
-                  className="object-cover rounded-lg"
-                />
-              </div>
-            )}
-            {mockGym.images[2] && (
-              <div className="col-span-1 relative aspect-square">
-                <Image
-                  src={mockGym.images[2]}
-                  alt="Gym image 3"
-                  fill
-                  className="object-cover rounded-lg"
-                />
-              </div>
-            )}
-
-            {/* Bottom Right Images */}
-            {mockGym.images[3] && (
-              <div className="col-span-1 relative aspect-square">
-                <Image
-                  src={mockGym.images[3]}
-                  alt="Gym image 4"
-                  fill
-                  className="object-cover rounded-lg"
-                />
-              </div>
-            )}
-            {mockGym.images[4] && (
-              <div className="col-span-1 relative aspect-square">
-                <Image
-                  src={mockGym.images[4]}
-                  alt="Gym image 5"
-                  fill
-                  className="object-cover rounded-lg"
-                />
-                {mockGym.images.length > 5 && (
-                  <div className="absolute right-2 bottom-2 bg-black/60 rounded-lg flex items-center justify-center">
-                    <button
-                      className="text-white font-semibold px-4 py-2 bg-black/70 rounded-lg"
-                      onClick={toggleDialog}
-                    >
-                      +{mockGym.images.length - 5} more
-                    </button>
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-          <dialog
-            className="my-auto w-2/3 justify-center fixed mx-auto"
-            ref={dialogRef}
-          >
-            <GalleryPage />
-          </dialog>
-        </div>
+        <GymImages />
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Main Content */}
@@ -423,49 +287,7 @@ export default function GymDetailPage({ params }: { params: { id: string } }) {
               </TabsContent>
 
               <TabsContent value="plans" className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {mockGym.plans.map((plan) => (
-                    <Card key={plan.id} className="relative">
-                      {plan.type === "YEARLY" && (
-                        <Badge className="absolute -top-2 left-4 bg-green-600">
-                          Best Value
-                        </Badge>
-                      )}
-                      <CardHeader>
-                        <CardTitle className="flex items-center justify-between">
-                          {plan.name}
-                          <span className="text-2xl font-bold">
-                            ${plan.price}
-                          </span>
-                        </CardTitle>
-                        <CardDescription>{plan.description}</CardDescription>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="space-y-2 text-sm text-gray-600">
-                          <div>
-                            Duration: {plan.duration} month
-                            {plan.duration > 1 ? "s" : ""}
-                          </div>
-                          <div>Type: {plan.type}</div>
-                          {plan.type === "YEARLY" && (
-                            <div className="text-green-600 font-semibold">
-                              Save 33% compared to monthly
-                            </div>
-                          )}
-                        </div>
-                        <Button
-                          className="w-full mt-4"
-                          onClick={() => {
-                            setSelectedPlan(plan.id.toString());
-                            setIsBookingOpen(true);
-                          }}
-                        >
-                          Choose Plan
-                        </Button>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
+                <GymPlanes />
               </TabsContent>
 
               <TabsContent value="reviews" className="space-y-4">
@@ -529,32 +351,12 @@ export default function GymDetailPage({ params }: { params: { id: string } }) {
           </div>
         </div>
       </div>
+      <AuthDialog
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
+        type={"book"}
+        id={params.id}
+      />
     </div>
   );
-}
-
-interface GymSummary {
-  id: number;
-  name: string;
-  logoUrl: string;
-}
-
-interface GymReview {
-  id: number;
-  gym: GymSummary;
-  rating: number;
-  comment: string;
-  createdAt: string; // ISO date string
-}
-
-interface Trainer {
-  id: number;
-  name: string;
-  email: string;
-  bio: string;
-  specialties: string[];
-  certifications: string[];
-  experience: number; // in years
-  trained: number; // number of clients trained
-  image: string; // assuming 't1' is a URL or imported asset path
 }

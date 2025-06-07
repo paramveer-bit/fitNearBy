@@ -16,6 +16,7 @@ import gym2 from "@/assets/gym2.png";
 import gym3 from "@/assets/gym3.png";
 import one from "@/assets/one.webp";
 import two from "@/assets/two.webp";
+import BlueTick from "@/assets/blueTick.svg";
 
 function GymCard({ gym }: { gym: SportsClub }) {
   const getStatusColor = (distance: number) => {
@@ -63,7 +64,14 @@ function GymCard({ gym }: { gym: SportsClub }) {
       <CardHeader className="pb-2">
         <div className="flex items-start justify-between">
           <div>
-            <CardTitle className="text-xl">{gym.name}</CardTitle>
+            <CardTitle className="text-xl flex">
+              <>{gym.name}</>
+              <Image
+                src={BlueTick}
+                alt="Verified"
+                className="inline-block ml-1 aspect-square h-6 w-6 ml-4"
+              />
+            </CardTitle>
             <div className="flex items-center text-sm text-gray-600 mt-1">
               <MapPin className="h-4 w-4 mr-1" />
               {gym.location}
@@ -104,7 +112,7 @@ function GymCard({ gym }: { gym: SportsClub }) {
             <div>
               <span className="text-sm text-gray-600">Starting from</span>
               <div className="font-bold text-2xl">
-                ${Math.min(...gym.plans.map((p) => p.price))}
+                {Math.min(...gym.plans.map((p) => p.price))}
                 <span className="text-sm font-normal text-gray-600">
                   /month
                 </span>

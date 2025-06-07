@@ -1,15 +1,15 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import Image from "next/image"
-import { ChevronLeft, ChevronRight } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import one from "@/assets/one.webp"
-import two from "@/assets/two.webp"
-import three from "@/assets/three.webp"
-import four from "@/assets/four.webp"
-import five from "@/assets/five.webp"
-import six from "@/assets/six.webp"
+import { useState } from "react";
+import Image from "next/image";
+import { ChevronLeft, ChevronRight } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import one from "@/assets/one.webp";
+import two from "@/assets/two.webp";
+import three from "@/assets/three.webp";
+import four from "@/assets/four.webp";
+import five from "@/assets/five.webp";
+import six from "@/assets/six.webp";
 
 export default function GalleryPage() {
   // Sample images - replace with your actual image data
@@ -63,42 +63,42 @@ export default function GalleryPage() {
       title: "Macro Photography",
     },
     {
-      id: 8,
+      id: 9,
       src: two,
       alt: "Gallery Image 8",
       title: "Macro Photography",
     },
     {
-      id: 8,
+      id: 10,
       src: two,
       alt: "Gallery Image 8",
       title: "Macro Photography",
     },
     {
-      id: 8,
+      id: 11,
       src: two,
       alt: "Gallery Image 8",
       title: "Macro Photography",
     },
-  ]
+  ];
 
-  const [selectedImage, setSelectedImage] = useState(images[0])
+  const [selectedImage, setSelectedImage] = useState(images[0]);
 
   const handlePrevious = () => {
-    const currentIndex = images.findIndex((img) => img.id === selectedImage.id)
-    const previousIndex = currentIndex > 0 ? currentIndex - 1 : images.length - 1
-    setSelectedImage(images[previousIndex])
-  }
+    const currentIndex = images.findIndex((img) => img.id === selectedImage.id);
+    const previousIndex =
+      currentIndex > 0 ? currentIndex - 1 : images.length - 1;
+    setSelectedImage(images[previousIndex]);
+  };
 
   const handleNext = () => {
-    const currentIndex = images.findIndex((img) => img.id === selectedImage.id)
-    const nextIndex = currentIndex < images.length - 1 ? currentIndex + 1 : 0
-    setSelectedImage(images[nextIndex])
-  }
+    const currentIndex = images.findIndex((img) => img.id === selectedImage.id);
+    const nextIndex = currentIndex < images.length - 1 ? currentIndex + 1 : 0;
+    setSelectedImage(images[nextIndex]);
+  };
 
   return (
     <div className="w-full p-2">
-
       {/* Main Content */}
       <div className="container p-1 w-full insert-0">
         {/* Main Image Display */}
@@ -154,14 +154,15 @@ export default function GalleryPage() {
                     className="object-cover"
                     sizes="(max-width: 768px) 96px, 128px"
                   />
-                  {selectedImage.id === image.id && <div className="absolute inset-0 bg-primary/20" />}
+                  {selectedImage.id === image.id && (
+                    <div className="absolute inset-0 bg-primary/20" />
+                  )}
                 </button>
               ))}
             </div>
           </div>
         </div>
-
       </div>
-    </div >
-  )
+    </div>
+  );
 }

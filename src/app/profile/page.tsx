@@ -1,36 +1,14 @@
 "use client";
 
-import { useState } from "react";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { UserContext } from "@/app/auth/AuthProvider";
+import React, { useContext } from "react";
+import AuthDialog from "@/components/auth";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import {
-  User,
-  Mail,
-  Calendar,
-  MapPin,
-  Star,
-  CreditCard,
-  Edit,
-} from "lucide-react";
+import { Mail, Calendar, MapPin } from "lucide-react";
 import ReviewCard from "@/components/profile/Review";
 
 // Mock user data - in a real app, this would come from your authentication system and database
@@ -107,18 +85,8 @@ const mockUser = {
 };
 
 export default function ProfilePage() {
-  const [isEditing, setIsEditing] = useState(false);
-  const [profileData, setProfileData] = useState({
-    name: mockUser.name,
-    email: mockUser.email,
-  });
-
-  const handleSaveProfile = () => {
-    // In a real app, this would update the user profile in the database
-    console.log("Saving profile:", profileData);
-    setIsEditing(false);
-    // Show success message
-  };
+  const { user } = useContext(UserContext);
+  console.log("User Context:", user);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -134,6 +102,18 @@ export default function ProfilePage() {
         return "bg-gray-100 text-gray-800";
     }
   };
+  if (!user) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <AuthDialog
+          open={true}
+          onOpenChange={() => {}}
+          type="profile"
+          id={null}
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -171,7 +151,7 @@ export default function ProfilePage() {
                 </div>
               </div>
             </div>
-            <Dialog open={isEditing} onOpenChange={setIsEditing}>
+            {/* <Dialog open={isEditing} onOpenChange={setIsEditing}>
               <DialogTrigger asChild>
                 <Button variant="outline">
                   <Edit className="h-4 w-4 mr-2" />
@@ -224,7 +204,7 @@ export default function ProfilePage() {
                   </div>
                 </div>
               </DialogContent>
-            </Dialog>
+            </Dialog> */}
           </div>
         </div>
 
@@ -267,10 +247,9 @@ export default function ProfilePage() {
 
         {/* Main Content */}
         <Tabs defaultValue="bookings" className="w-full">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="bookings">My Bookings</TabsTrigger>
             <TabsTrigger value="reviews">My Reviews</TabsTrigger>
-            <TabsTrigger value="settings">Settings</TabsTrigger>
           </TabsList>
 
           <TabsContent value="bookings" className="space-y-6">
@@ -328,7 +307,7 @@ export default function ProfilePage() {
                       </Button>
                       {booking.status === "CONFIRMED" && (
                         <Button variant="outline" size="sm">
-                          Manage Booking
+                          Download Card
                         </Button>
                       )}
                     </div>
@@ -346,7 +325,7 @@ export default function ProfilePage() {
             </div>
           </TabsContent>
 
-          <TabsContent value="settings" className="space-y-6">
+          {/* <TabsContent value="settings" className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <Card>
                 <CardHeader>
@@ -420,27 +399,9 @@ export default function ProfilePage() {
                 </Button>
               </CardContent>
             </Card>
-          </TabsContent>
+          </TabsContent> */}
         </Tabs>
       </div>
     </div>
   );
-}
-
-interface GymSummary {
-  id: number;
-  name: string;
-  logoUrl: string;
-}
-interface UserSummary {
-  name: string;
-}
-
-interface GymReview {
-  id: number;
-  gym?: GymSummary;
-  user?: UserSummary;
-  rating: number;
-  comment: string;
-  createdAt: string; // ISO date string
 }

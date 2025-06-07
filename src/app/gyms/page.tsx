@@ -1,27 +1,13 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
-import { MapPin, Star, Clock, Search, X } from "lucide-react";
-import Link from "next/link";
-import Image from "next/image";
-import gym1 from "@/assets/gym1.png";
-import gym2 from "@/assets/gym2.png";
-import gym3 from "@/assets/gym3.png";
-import one from "@/assets/one.webp";
-import two from "@/assets/two.webp";
+import { MapPin, Search, X } from "lucide-react";
 import GymCard from "@/components/home/gymCard";
 
 // Mock data - in a real app, this would come from your database
@@ -150,34 +136,25 @@ const mockGyms: SportsClub[] = [
 ];
 
 const allFacilities = [
+  "Only Mens",
+  "Only Womens",
+  "Unisex",
   "Cardio Equipment",
   "Weight Training",
   "Group Classes",
   "Swimming Pool",
   "Personal Training",
   "Yoga Studio",
-  "Meditation Room",
-  "Spa Services",
-  "Healthy Cafe",
-  "Tennis Court",
   "Locker Rooms",
   "Nutrition Counseling",
 ];
 
 interface Filters {
   priceRange: [number, number];
-  minRating: number;
   maxDistance: number;
   facilities: string[];
   open24Hours: boolean;
 }
-
-const getStatusColor = (distance: number) => {
-  if (distance < 1) return "bg-green-100 text-green-800";
-  if (distance < 3) return "bg-blue-100 text-blue-800";
-  if (distance < 5) return "bg-yellow-100 text-yellow-800";
-  return "bg-gray-100 text-gray-800";
-};
 
 export default function GymsPage() {
   const [gyms, setGyms] = useState(mockGyms);
@@ -189,13 +166,16 @@ export default function GymsPage() {
   const [sortBy, setSortBy] = useState("distance");
   const [filters, setFilters] = useState<Filters>({
     priceRange: [0, 100],
-    minRating: 0,
     maxDistance: 10,
     facilities: [],
     open24Hours: false,
   });
   const [activeFiltersCount, setActiveFiltersCount] = useState(0);
-
+  console.log("User Location:", userLocation);
+  if (!gyms) {
+    setGyms(mockGyms);
+    setSortBy("distance");
+  }
   useEffect(() => {
     // Get user's location
     if (navigator.geolocation) {
@@ -217,7 +197,7 @@ export default function GymsPage() {
   useEffect(() => {
     let count = 0;
     if (filters.priceRange[0] > 0 || filters.priceRange[1] < 100) count++;
-    if (filters.minRating > 0) count++;
+    // if (filters.minRating > 0) count++;
     if (filters.maxDistance < 10) count++;
     if (filters.facilities.length > 0) count++;
     if (filters.open24Hours) count++;
@@ -236,9 +216,9 @@ export default function GymsPage() {
       }
 
       // Rating filter
-      if (gym.rating < filters.minRating) {
-        return false;
-      }
+      // if (gym.rating < filters.minRating) {
+      //   return false;
+      // }
 
       // Distance filter
       if (gym.distance > filters.maxDistance) {
@@ -292,7 +272,7 @@ export default function GymsPage() {
   const clearAllFilters = () => {
     setFilters({
       priceRange: [0, 100],
-      minRating: 0,
+      // minRating: 0,
       maxDistance: 10,
       facilities: [],
       open24Hours: false,
@@ -310,7 +290,7 @@ export default function GymsPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Fixed Left Sidebar */}
+      {/* Hero and search section */}
       <section className="bg-gradient-to-r from-gray-900 to-gray-600 text-white py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="text-4xl md:text-6xl font-bold mb-4">
@@ -351,6 +331,7 @@ export default function GymsPage() {
       </section>
 
       <div className="flex ">
+        {/* Filer Side bar */}
         <div className="w-80 bg-white border-r border-gray-200 p-6 overflow-y-auto">
           <div className="space-y-6">
             <div>
@@ -385,7 +366,7 @@ export default function GymsPage() {
             </div>
 
             {/* Minimum Rating */}
-            <div className="space-y-3">
+            {/* <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <Label className="text-sm font-medium">Minimum Rating</Label>
                 <span className="text-sm text-gray-600">
@@ -404,7 +385,7 @@ export default function GymsPage() {
                 step={0.1}
                 className="w-full"
               />
-            </div>
+            </div> */}
 
             {/* Maximum Distance */}
             <div className="space-y-3">
@@ -479,8 +460,6 @@ export default function GymsPage() {
         </div>
         {/* Main Content */}
         <div className="flex-1 p-6">
-          {/* Header */}
-
           {/* Active Filters Display */}
           {activeFiltersCount > 0 && (
             <div className="mb-6 flex flex-wrap gap-2">
@@ -489,11 +468,11 @@ export default function GymsPage() {
                   Price: ${filters.priceRange[0]} - ${filters.priceRange[1]}
                 </Badge>
               ) : null}
-              {filters.minRating > 0 && (
+              {/* {filters.minRating > 0 && (
                 <Badge variant="secondary" className="px-3 py-1">
                   Rating: {filters.minRating}+ stars
                 </Badge>
-              )}
+              )} */}
               {filters.maxDistance < 10 && (
                 <Badge variant="secondary" className="px-3 py-1">
                   Distance: ≤ {filters.maxDistance} km
@@ -532,6 +511,7 @@ export default function GymsPage() {
               <GymCard gym={gym} key={gym.id} />
             ))}
           </div>
+          {/* No Gym Found */}
 
           {sortedGyms.length === 0 && (
             <div className="text-center py-12">

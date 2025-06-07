@@ -1,15 +1,27 @@
-"use client"
+"use client";
 
-import type React from "react"
+import type React from "react";
 
-import { useState } from "react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
-import { Label } from "@/components/ui/label"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { MapPin, Phone, Mail, Clock, Send } from "lucide-react"
+import { useState } from "react";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { MapPin, Phone, Mail, Clock, Send } from "lucide-react";
 
 export default function ContactPage() {
   const [formData, setFormData] = useState({
@@ -18,14 +30,14 @@ export default function ContactPage() {
     subject: "",
     message: "",
     inquiryType: "",
-  })
+  });
 
   const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
+    e.preventDefault();
     // In a real app, this would send the form data to your backend
-    console.log("Form submitted:", formData)
+    console.log("Form submitted:", formData);
     // Show success message
-    alert("Thank you for your message! We'll get back to you soon.")
+    alert("Thank you for your message! We'll get back to you soon.");
     // Reset form
     setFormData({
       name: "",
@@ -33,12 +45,12 @@ export default function ContactPage() {
       subject: "",
       message: "",
       inquiryType: "",
-    })
-  }
+    });
+  };
 
   const handleChange = (field: string, value: string) => {
-    setFormData((prev) => ({ ...prev, [field]: value }))
-  }
+    setFormData((prev) => ({ ...prev, [field]: value }));
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -47,7 +59,8 @@ export default function ContactPage() {
         <div className="text-center mb-12">
           <h1 className="text-4xl font-bold text-gray-900 mb-4">Contact Us</h1>
           <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-            Have questions about our gyms or need help with your booking? We're here to help!
+            Have questions about our gyms or need help with your booking?
+            We&apos;re here to help!
           </p>
         </div>
 
@@ -62,7 +75,9 @@ export default function ContactPage() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-gray-600 mb-2">Call us for immediate assistance</p>
+                <p className="text-gray-600 mb-2">
+                  Call us for immediate assistance
+                </p>
                 <p className="font-semibold text-lg">+1 (555) 123-4567</p>
                 <div className="flex items-center mt-2 text-sm text-gray-600">
                   <Clock className="h-4 w-4 mr-1" />
@@ -81,7 +96,9 @@ export default function ContactPage() {
               <CardContent>
                 <p className="text-gray-600 mb-2">Send us an email anytime</p>
                 <p className="font-semibold">support@gymbook.com</p>
-                <p className="text-sm text-gray-600 mt-2">We typically respond within 24 hours</p>
+                <p className="text-sm text-gray-600 mt-2">
+                  We typically respond within 24 hours
+                </p>
               </CardContent>
             </Card>
 
@@ -132,7 +149,8 @@ export default function ContactPage() {
               <CardHeader>
                 <CardTitle>Send us a Message</CardTitle>
                 <CardDescription>
-                  Fill out the form below and we'll get back to you as soon as possible.
+                  Fill out the form below and we&apos;ll get back to you as soon
+                  as possible.
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -164,15 +182,26 @@ export default function ContactPage() {
 
                   <div className="space-y-2">
                     <Label htmlFor="inquiryType">Inquiry Type</Label>
-                    <Select value={formData.inquiryType} onValueChange={(value) => handleChange("inquiryType", value)}>
+                    <Select
+                      value={formData.inquiryType}
+                      onValueChange={(value) =>
+                        handleChange("inquiryType", value)
+                      }
+                    >
                       <SelectTrigger>
                         <SelectValue placeholder="Select the type of inquiry" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="general">General Question</SelectItem>
+                        <SelectItem value="general">
+                          General Question
+                        </SelectItem>
                         <SelectItem value="booking">Booking Support</SelectItem>
-                        <SelectItem value="technical">Technical Issue</SelectItem>
-                        <SelectItem value="partnership">Partnership Inquiry</SelectItem>
+                        <SelectItem value="technical">
+                          Technical Issue
+                        </SelectItem>
+                        <SelectItem value="partnership">
+                          Partnership Inquiry
+                        </SelectItem>
                         <SelectItem value="feedback">Feedback</SelectItem>
                         <SelectItem value="other">Other</SelectItem>
                       </SelectContent>
@@ -219,31 +248,45 @@ export default function ContactPage() {
               <CardContent>
                 <div className="space-y-6">
                   <div>
-                    <h4 className="font-semibold mb-2">How do I book a gym membership?</h4>
+                    <h4 className="font-semibold mb-2">
+                      How do I book a gym membership?
+                    </h4>
                     <p className="text-gray-600 text-sm">
-                      Simply browse our gym listings, select a gym that interests you, choose a membership plan, and
-                      complete the booking process. You'll receive a confirmation email with all the details.
+                      Simply browse our gym listings, select a gym that
+                      interests you, choose a membership plan, and complete the
+                      booking process. You&apos;ll receive a confirmation email
+                      with all the details.
                     </p>
                   </div>
                   <div>
-                    <h4 className="font-semibold mb-2">Can I cancel my membership?</h4>
+                    <h4 className="font-semibold mb-2">
+                      Can I cancel my membership?
+                    </h4>
                     <p className="text-gray-600 text-sm">
-                      Yes, you can cancel your membership according to the terms of your chosen plan. Most plans offer
-                      flexible cancellation options. Check your membership details or contact us for assistance.
+                      Yes, you can cancel your membership according to the terms
+                      of your chosen plan. Most plans offer flexible
+                      cancellation options. Check your membership details or
+                      contact us for assistance.
                     </p>
                   </div>
                   <div>
-                    <h4 className="font-semibold mb-2">Do you offer trial memberships?</h4>
+                    <h4 className="font-semibold mb-2">
+                      Do you offer trial memberships?
+                    </h4>
                     <p className="text-gray-600 text-sm">
-                      Many of our partner gyms offer trial memberships or day passes. Look for "Trial" plans when
-                      browsing gym details, or contact the gym directly.
+                      Many of our partner gyms offer trial memberships or day
+                      passes. Look for &quot;Trial&quot; plans when browsing gym
+                      details, or contact the gym directly.
                     </p>
                   </div>
                   <div>
-                    <h4 className="font-semibold mb-2">How do I find gyms near me?</h4>
+                    <h4 className="font-semibold mb-2">
+                      How do I find gyms near me?
+                    </h4>
                     <p className="text-gray-600 text-sm">
-                      Use our "Find Gyms" feature which uses your location to show nearby gyms. You can also search by
-                      city, neighborhood, or specific gym name.
+                      Use our &quot;Find Gyms&quot; feature which uses your
+                      location to show nearby gyms. You can also search by city,
+                      neighborhood, or specific gym name.
                     </p>
                   </div>
                 </div>
@@ -253,5 +296,5 @@ export default function ContactPage() {
         </div>
       </div>
     </div>
-  )
+  );
 }
