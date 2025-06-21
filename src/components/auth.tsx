@@ -47,7 +47,11 @@ export default function AuthDialog({
     e.preventDefault();
     console.log("Login data:", loginData);
 
-    setUser(true);
+    setUser({
+      email: loginData.email,
+      isVerified: true,
+      isAdmin: true,
+    });
     // Handle login logic here
     if (type === "book") {
       console.log("Booking gym with ID:", id);

@@ -4,9 +4,15 @@ import React, { useState } from "react";
 
 // Define the context type
 type UserContextType = {
-  user: boolean; // Replace 'any' with your user type if you have one
-  setUser: React.Dispatch<React.SetStateAction<boolean>>;
+  user: UserData; // Replace 'any' with your user type if you have one
+  setUser: React.Dispatch<React.SetStateAction<UserData>>;
 };
+
+interface UserData {
+  email: string;
+  isVerified: boolean;
+  isAdmin: boolean;
+}
 
 // Create the context
 // const MyContext = createContext<MyContextType | undefined>(undefined);
@@ -17,7 +23,11 @@ export const MyContextProvider = ({
 }: {
   children: React.ReactNode;
 }) => {
-  const [user, setUser] = useState(false);
+  const [user, setUser] = useState({
+    email: "",
+    isVerified: false,
+    isAdmin: false,
+  });
 
   return (
     <UserContext.Provider value={{ user: user, setUser: setUser }}>
@@ -28,6 +38,6 @@ export const MyContextProvider = ({
 
 // Custom hook to use context
 export const UserContext = React.createContext<UserContextType>({
-  user: false,
+  user: { email: "", isVerified: false, isAdmin: false },
   setUser: () => {},
 });

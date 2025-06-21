@@ -19,14 +19,14 @@ function TrainerCard({ trainer }: { trainer: Trainer }) {
         return undefined;
     }
   };
-  const imageSrc = getImageSrc(trainer.image);
+  const imageSrc = getImageSrc(trainer.profileUrl);
 
   return (
     <Card key={trainer.id}>
       <CardHeader>
         <div className="flex items-center space-x-4">
           <Avatar className="h-16 w-16">
-            <AvatarImage src={imageSrc} alt={trainer.name} />
+            <AvatarImage src={trainer.profileUrl} alt={trainer.name} />
             <AvatarFallback>
               {trainer.name
                 .split(" ")
@@ -38,11 +38,11 @@ function TrainerCard({ trainer }: { trainer: Trainer }) {
             <CardTitle>{trainer.name}</CardTitle>
             <div className="flex items-center text-sm text-gray-600 mt-1">
               <Users className="h-4 w-4 mr-1" />
-              {trainer.trained} clients trained
+              {!trainer.trained ? 0 : trainer.trained} clients trained
             </div>
             <div className="flex items-center text-sm text-gray-600">
               <Award className="h-4 w-4 mr-1" />
-              {trainer.experience} years experience
+              {!trainer.experience ? 0 : trainer.experience} years experience
             </div>
           </div>
         </div>
@@ -59,16 +59,6 @@ function TrainerCard({ trainer }: { trainer: Trainer }) {
             ))}
           </div>
         </div>
-        <div>
-          <h4 className="font-semibold text-sm mb-2">Certifications</h4>
-          <div className="flex flex-wrap gap-1">
-            {trainer.certifications.map((cert, index) => (
-              <Badge key={index} variant="outline" className="text-xs">
-                {cert}
-              </Badge>
-            ))}
-          </div>
-        </div>
       </CardContent>
     </Card>
   );
@@ -77,13 +67,12 @@ function TrainerCard({ trainer }: { trainer: Trainer }) {
 export default TrainerCard;
 
 interface Trainer {
-  id: number;
+  id: string;
   name: string;
   email: string;
   bio: string;
   specialties: string[];
-  certifications: string[];
-  experience: number; // in years
-  trained: number; // number of clients trained
-  image: string; // assuming 't1' is a URL or imported asset path
+  experience: number | null; // in years
+  trained: number | null; // number of clients trained
+  profileUrl: string; // assuming 't1' is a URL or imported asset path
 }

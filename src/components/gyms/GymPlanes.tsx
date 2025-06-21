@@ -17,6 +17,7 @@ const gymData = {
       originalPrice: 2499,
       duration: "1 Month",
       features: ["Gym Access", "Locker Facility", "Basic Equipment"],
+      type: "Monthly",
       popular: false,
     },
     {

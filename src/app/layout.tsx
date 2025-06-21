@@ -7,6 +7,8 @@ import "./globals.css";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { MyContextProvider } from "@/app/auth/AuthProvider";
+import { Toaster } from "@/components/ui/sonner";
+
 // import { useState } from "react";
 
 const inter = Inter({ subsets: ["latin"] });
@@ -39,6 +41,7 @@ export default function RootLayout({
         <MyContextProvider>
           <Navbar />
           <main>{children}</main>
+          <Toaster richColors />
           <Footer />
         </MyContextProvider>
         {/* </UserContext.Provider> */}
