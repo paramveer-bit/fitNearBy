@@ -1,93 +1,32 @@
 "use client";
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { UserContext } from "@/app/auth/AuthProvider";
-import React, { useContext } from "react";
+import { UserContext } from "@/context/userContext";
+import React, { useContext, useEffect, useState } from "react";
 import AuthDialog from "@/components/auth";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Mail, Calendar, MapPin } from "lucide-react";
+import { Mail, Calendar, MapPin, CreditCard, User } from "lucide-react";
 import ReviewCard from "@/components/profile/Review";
-
-// Mock user data - in a real app, this would come from your authentication system and database
-const mockUser = {
-  id: 1,
-  name: "John Doe",
-  email: "john.doe@example.com",
-  isVerified: true,
-  createdAt: "2024-01-15",
-  bookings: [
-    {
-      id: 1,
-      gym: {
-        id: 1,
-        name: "FitZone Premium",
-        location: "Downtown",
-        logoUrl: "/placeholder.svg?height=50&width=50",
-      },
-      plan: {
-        name: "Monthly",
-        price: 49.99,
-        type: "MONTHLY",
-      },
-      startDate: "2024-02-01",
-      endDate: "2024-03-01",
-      status: "CONFIRMED",
-      createdAt: "2024-01-20",
-    },
-    {
-      id: 2,
-      gym: {
-        id: 2,
-        name: "PowerHouse Gym",
-        location: "Midtown",
-        logoUrl: "/placeholder.svg?height=50&width=50",
-      },
-      plan: {
-        name: "Quarterly",
-        price: 99.99,
-        type: "QUARTERLY",
-      },
-      startDate: "2024-01-01",
-      endDate: "2024-04-01",
-      status: "COMPLETED",
-      createdAt: "2023-12-15",
-    },
-  ],
-  reviews: [
-    {
-      id: 1,
-      gym: {
-        id: 1,
-        name: "FitZone Premium",
-        logoUrl: "/placeholder.svg?height=50&width=50",
-      },
-      rating: 5,
-      comment:
-        "Excellent facilities and friendly staff. The equipment is always clean and well-maintained.",
-      createdAt: "2024-01-25",
-    },
-    {
-      id: 2,
-      gym: {
-        id: 2,
-        name: "PowerHouse Gym",
-        logoUrl: "/placeholder.svg?height=50&width=50",
-      },
-      rating: 4,
-      comment:
-        "Great gym with good variety of equipment. The trainers are knowledgeable and helpful.",
-      createdAt: "2024-01-10",
-    },
-  ],
-};
+import { UserProfile } from "@/types";
+import axios from "axios";
+import { Loader } from "lucide-react";
+import NewReview from "@/components/profile/AddReview";
+import AddReview from "@/components/profile/AddReview";
+import { toast } from "sonner";
 
 export default function ProfilePage() {
   const { user } = useContext(UserContext);
-  console.log("User Context:", user);
-
+  const [profileData, setProfileData] = useState<UserProfile>();
+  const [loading, setLoading] = useState(false);
   const getStatusColor = (status: string) => {
     switch (status) {
       case "CONFIRMED":
@@ -102,6 +41,78 @@ export default function ProfilePage() {
         return "bg-gray-100 text-gray-800";
     }
   };
+
+  const handleAddReview = async (
+    gymId: string,
+    rating: number,
+    comment: string
+  ) => {
+    try {
+      const res = await axios.post(
+        `${process.env.NEXT_PUBLIC_BASEURL}/reviews/${gymId}`,
+        {
+          rating,
+          comment,
+        },
+        { withCredentials: true }
+      );
+
+      const gym = profileData?.Booking.find((b) => b.gym.id === gymId)?.gym;
+
+      setProfileData((prev) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          Reviews: [
+            ...prev.Reviews,
+            {
+              id: res.data.data.id,
+              gym: gym || undefined,
+              rating,
+              comment,
+              createdAt: new Date().toISOString(),
+            },
+          ],
+        };
+      });
+      toast.success("Review added successfully!");
+      return true;
+    } catch (error) {
+      return false;
+    }
+  };
+
+  useEffect(() => {
+    const fetch = async () => {
+      try {
+        setLoading(true);
+        const res = await axios.get(
+          `${process.env.NEXT_PUBLIC_BASEURL}/user/profile`,
+          { withCredentials: true }
+        );
+        setProfileData(res.data.data);
+      } catch (error) {
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetch();
+  }, []);
+
+  const handelDelete = async (id: string) => {
+    try {
+      await axios.delete(`${process.env.NEXT_PUBLIC_BASEURL}/reviews/${id}`);
+      setProfileData((prev) =>
+        prev
+          ? {
+              ...prev,
+              Reviews: prev.Reviews.filter((review) => review.id !== id),
+            }
+          : prev
+      );
+    } catch (error) {}
+  };
+
   if (!user) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -111,6 +122,29 @@ export default function ProfilePage() {
           type="profile"
           id={null}
         />
+      </div>
+    );
+  }
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Loader className="h-8 w-8 animate-spin text-blue-600" />
+      </div>
+    );
+  }
+
+  if (!loading && !profileData) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <p className="text-gray-500">No profile data found</p>
+      </div>
+    );
+  }
+
+  if (!profileData) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <p className="text-gray-500">No profile data found</p>
       </div>
     );
   }
@@ -125,7 +159,7 @@ export default function ProfilePage() {
               <Avatar className="h-20 w-20">
                 <AvatarImage src="/placeholder.svg?height=80&width=80" />
                 <AvatarFallback className="text-xl">
-                  {mockUser.name
+                  {profileData.name
                     .split(" ")
                     .map((n) => n[0])
                     .join("")}
@@ -133,12 +167,12 @@ export default function ProfilePage() {
               </Avatar>
               <div>
                 <h1 className="text-3xl font-bold text-gray-900">
-                  {mockUser.name}
+                  {profileData.name}
                 </h1>
                 <div className="flex items-center text-gray-600 mt-1">
                   <Mail className="h-4 w-4 mr-1" />
-                  {mockUser.email}
-                  {mockUser.isVerified && (
+                  {profileData.email}
+                  {profileData.isVerified && (
                     <Badge variant="secondary" className="ml-2 text-xs">
                       Verified
                     </Badge>
@@ -147,7 +181,7 @@ export default function ProfilePage() {
                 <div className="flex items-center text-gray-600 mt-1">
                   <Calendar className="h-4 w-4 mr-1" />
                   Member since{" "}
-                  {new Date(mockUser.createdAt).toLocaleDateString()}
+                  {new Date(profileData.createdAt).toLocaleDateString()}
                 </div>
               </div>
             </div>
@@ -217,8 +251,9 @@ export default function ProfilePage() {
             <CardContent>
               <div className="text-3xl font-bold text-blue-600">
                 {
-                  mockUser.bookings.filter((b) => b.status === "CONFIRMED")
-                    .length
+                  profileData.Booking.filter(
+                    (b) => b.endDate >= new Date().toISOString()
+                  ).length
                 }
               </div>
             </CardContent>
@@ -229,7 +264,7 @@ export default function ProfilePage() {
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold text-green-600">
-                {mockUser.bookings.length}
+                {profileData.Booking.length}
               </div>
             </CardContent>
           </Card>
@@ -239,7 +274,7 @@ export default function ProfilePage() {
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold text-purple-600">
-                {mockUser.reviews.length}
+                {profileData.Reviews.length}
               </div>
             </CardContent>
           </Card>
@@ -254,15 +289,13 @@ export default function ProfilePage() {
 
           <TabsContent value="bookings" className="space-y-6">
             <div className="space-y-4">
-              {mockUser.bookings.map((booking) => (
+              {profileData.Booking.map((booking) => (
                 <Card key={booking.id}>
                   <CardContent className="p-6">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center space-x-4">
                         <Avatar className="h-12 w-12">
-                          <AvatarImage
-                            src={booking.gym.logoUrl || "/placeholder.svg"}
-                          />
+                          <AvatarImage src={"/placeholder.svg"} />
                           <AvatarFallback>
                             {booking.gym.name
                               .split(" ")
@@ -293,10 +326,10 @@ export default function ProfilePage() {
                         </Badge>
                         <div className="mt-2">
                           <div className="font-semibold">
-                            {booking.plan.name}
+                            {booking.plan.type}
                           </div>
                           <div className="text-gray-600">
-                            ${booking.plan.price}
+                            Rs. {booking.plan.newprice}
                           </div>
                         </div>
                       </div>
@@ -318,9 +351,23 @@ export default function ProfilePage() {
           </TabsContent>
 
           <TabsContent value="reviews" className="space-y-6">
+            <div className="flex justify-between items-center">
+              <h2 className="text-2xl font-bold mt-2">My Reviews</h2>
+              <AddReview
+                booking={profileData.Booking}
+                reviews={profileData.Reviews}
+                handleAddReview={handleAddReview}
+              />
+            </div>
             <div className="space-y-4">
-              {mockUser.reviews.map((review) => (
-                <ReviewCard key={review.id} review={review} type={"gym"} />
+              {profileData.Reviews.map((review) => (
+                <ReviewCard
+                  id={review.id}
+                  key={review.id}
+                  review={review}
+                  type={"gym"}
+                  handelDelete={handelDelete}
+                />
               ))}
             </div>
           </TabsContent>

@@ -100,7 +100,7 @@ export default function Component({ id }: { id: string }) {
     });
 
     try {
-      const response = await axios.post(
+      await axios.post(
         `${process.env.NEXT_PUBLIC_BASEURL}/gym-time/modify/${dayData.id}`,
         {
           day,

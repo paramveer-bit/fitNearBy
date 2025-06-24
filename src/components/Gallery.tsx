@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Image from "next/image";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import one from "@/assets/one.webp";
 import two from "@/assets/two.webp";
@@ -10,77 +10,16 @@ import three from "@/assets/three.webp";
 import four from "@/assets/four.webp";
 import five from "@/assets/five.webp";
 import six from "@/assets/six.webp";
+import { ImageType } from "@/types";
 
-export default function GalleryPage() {
+export default function GalleryPage({
+  images,
+  toggleDialog,
+}: {
+  images: ImageType[];
+  toggleDialog: () => void;
+}) {
   // Sample images - replace with your actual image data
-  const images = [
-    {
-      id: 1,
-      src: one,
-      alt: "Gallery Image 1",
-      title: "Beautiful Landscape",
-    },
-    {
-      id: 2,
-      src: two,
-      alt: "Gallery Image 2",
-      title: "City Architecture",
-    },
-    {
-      id: 3,
-      src: three,
-      alt: "Gallery Image 3",
-      title: "Nature Photography",
-    },
-    {
-      id: 4,
-      src: four,
-      alt: "Gallery Image 4",
-      title: "Abstract Art",
-    },
-    {
-      id: 5,
-      src: five,
-      alt: "Gallery Image 5",
-      title: "Portrait Photography",
-    },
-    {
-      id: 6,
-      src: six,
-      alt: "Gallery Image 6",
-      title: "Street Photography",
-    },
-    {
-      id: 7,
-      src: one,
-      alt: "Gallery Image 7",
-      title: "Wildlife Photography",
-    },
-    {
-      id: 8,
-      src: two,
-      alt: "Gallery Image 8",
-      title: "Macro Photography",
-    },
-    {
-      id: 9,
-      src: two,
-      alt: "Gallery Image 8",
-      title: "Macro Photography",
-    },
-    {
-      id: 10,
-      src: two,
-      alt: "Gallery Image 8",
-      title: "Macro Photography",
-    },
-    {
-      id: 11,
-      src: two,
-      alt: "Gallery Image 8",
-      title: "Macro Photography",
-    },
-  ];
 
   const [selectedImage, setSelectedImage] = useState(images[0]);
 
@@ -105,12 +44,21 @@ export default function GalleryPage() {
         <div className="relative mb-2">
           <div className="relative aspect-[16/9] max-h-[70vh] mx-auto bg-muted rounded-lg overflow-hidden">
             <Image
-              src={selectedImage.src || "/placeholder.svg"}
-              alt={selectedImage.alt}
+              src={selectedImage.url || "/placeholder.svg"}
+              alt={"GYM Image"}
               fill
               className="object-cover "
               priority
             />
+
+            <Button
+              variant="secondary"
+              size="icon"
+              className="absolute top-4 right-4 bg-background/80 hover:bg-background/90 z-10"
+              onClick={toggleDialog}
+            >
+              <X className="h-4 w-4" />
+            </Button>
 
             {/* Navigation Arrows */}
             <Button
@@ -148,8 +96,8 @@ export default function GalleryPage() {
                   }`}
                 >
                   <Image
-                    src={image.src || "/placeholder.svg"}
-                    alt={image.alt}
+                    src={image.url}
+                    alt={"Thumbnail"}
                     fill
                     className="object-cover"
                     sizes="(max-width: 768px) 96px, 128px"

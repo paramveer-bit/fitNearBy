@@ -1,21 +1,14 @@
-import React, { useRef } from "react";
+"use client";
 
 import Image from "next/image";
-import one from "@/assets/one.webp";
-import two from "@/assets/two.webp";
-import three from "@/assets/three.webp";
-import four from "@/assets/four.webp";
-import five from "@/assets/five.webp";
-import six from "@/assets/six.webp";
 import GalleryPage from "@/components/Gallery";
+import { useEffect, useRef, useState } from "react";
+import axios from "axios";
+import { ImageType } from "@/types";
 
-const mockGym = {
-  id: "1",
-  name: "Fitness Hub",
-  images: [one, two, three, four, five, six],
-};
+import { Loader2 } from "lucide-react";
 
-function GymImages() {
+function GymImages({ gymId }: { gymId: string }) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const toggleDialog = () => {
     if (dialogRef.current) {
@@ -26,14 +19,49 @@ function GymImages() {
       }
     }
   };
+
+  const [images, setImages] = useState<ImageType[]>([]);
+  const [loading, setLoading] = useState(false);
+  useEffect(() => {
+    const fetch = async () => {
+      setLoading(true);
+      try {
+        const res = await axios.get(
+          `${process.env.NEXT_PUBLIC_BASEURL}/gym/${gymId}/images`
+        );
+        setImages([...res.data.data, ...res.data.data]);
+      } catch (error) {
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetch();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="animate-spin text-gray-500" size={24} />
+      </div>
+    );
+  }
+
+  if (!loading && images.length === 0) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <p className="text-gray-500">No images available</p>
+      </div>
+    );
+  }
+
   return (
     <div className="mb-8 relative">
       <div className="grid grid-cols-4 gap-4">
         {/* Large Main Image */}
-        {mockGym.images[0] && (
+        {images[0] && (
           <div className="col-span-2 row-span-2 relative">
             <Image
-              src={mockGym.images[0]}
+              src={images[0].url}
               alt="Main gym image"
               fill
               className="object-cover rounded-lg"
@@ -42,20 +70,20 @@ function GymImages() {
         )}
 
         {/* Top Right Images */}
-        {mockGym.images[1] && (
+        {images[1] && (
           <div className="col-span-1 relative aspect-square">
             <Image
-              src={mockGym.images[1]}
+              src={images[1].url}
               alt="Gym image 2"
               fill
               className="object-cover rounded-lg"
             />
           </div>
         )}
-        {mockGym.images[2] && (
+        {images[2] && (
           <div className="col-span-1 relative aspect-square">
             <Image
-              src={mockGym.images[2]}
+              src={images[2].url}
               alt="Gym image 3"
               fill
               className="object-cover rounded-lg"
@@ -64,31 +92,31 @@ function GymImages() {
         )}
 
         {/* Bottom Right Images */}
-        {mockGym.images[3] && (
+        {images[3] && (
           <div className="col-span-1 relative aspect-square">
             <Image
-              src={mockGym.images[3]}
+              src={images[3].url}
               alt="Gym image 4"
               fill
               className="object-cover rounded-lg"
             />
           </div>
         )}
-        {mockGym.images[4] && (
+        {images[4] && (
           <div className="col-span-1 relative aspect-square">
             <Image
-              src={mockGym.images[4]}
+              src={images[4].url}
               alt="Gym image 5"
               fill
               className="object-cover rounded-lg"
             />
-            {mockGym.images.length > 5 && (
+            {images.length > 5 && (
               <div className="absolute right-2 bottom-2 bg-black/60 rounded-lg flex items-center justify-center">
                 <button
                   className="text-white font-semibold px-4 py-2 bg-black/70 rounded-lg"
                   onClick={toggleDialog}
                 >
-                  +{mockGym.images.length - 5} more
+                  +{images.length - 5} more
                 </button>
               </div>
             )}
@@ -99,7 +127,7 @@ function GymImages() {
         className="my-auto w-2/3 justify-center fixed mx-auto"
         ref={dialogRef}
       >
-        <GalleryPage />
+        <GalleryPage images={images} toggleDialog={toggleDialog} />
       </dialog>
     </div>
   );

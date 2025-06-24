@@ -6,7 +6,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-import { MyContextProvider } from "@/app/auth/AuthProvider";
+import { MyContextProvider } from "@/context/userContext";
 import { Toaster } from "@/components/ui/sonner";
 
 // import { useState } from "react";

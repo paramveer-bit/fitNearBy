@@ -27,7 +27,6 @@ interface ImageData {
   id: string;
   url: string;
 }
-import t1 from "../../../../assets/t1.jpg"; // Placeholder image, replace with actual image path
 
 function Images({ id }: { id: string }) {
   const [isDialogOpen, setIsDialogOpen] = useState(false);

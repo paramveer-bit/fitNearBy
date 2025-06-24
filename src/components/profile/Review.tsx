@@ -1,23 +1,37 @@
 import React from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { Star } from "lucide-react";
-
-function Review({ review, type }: { review: GymReview; type: string }) {
+import { Star, Trash2 } from "lucide-react";
+import { Reviews } from "@/types";
+import { Button } from "../ui/button";
+function Review({
+  id,
+  review,
+  type,
+  handelDelete,
+}: {
+  id: string;
+  review: Reviews;
+  type: string;
+  handelDelete: (id: string) => void;
+}) {
   return (
     <Card key={review.id}>
       <CardContent className="p-6">
         <div className="flex items-start justify-between">
           <div className="flex items-center space-x-4">
             <Avatar className="h-12 w-12">
-              {review.gym?.logoUrl ? (
+              {/* {review.gym?.logoUrl ? (
                 <AvatarImage src={review.gym.logoUrl || "/placeholder.svg"} />
               ) : (
                 ""
-              )}
+              )} */}
               <AvatarFallback>
                 {type === "gym"
                   ? review.gym?.name
+                      .split(" ")
+                      .map((n) => n[0])
+                      .join("")
                   : review.user?.name
                       .split(" ")
                       .map((n) => n[0])
@@ -45,6 +59,16 @@ function Review({ review, type }: { review: GymReview; type: string }) {
               </div>
             </div>
           </div>
+          {type === "gym" && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => handelDelete(id)}
+              className="bg-red-50 text-red-600 hover:bg-red-100 hover:text-red-700 border-red-200"
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          )}
         </div>
         <div className="mt-4">
           <p className="text-gray-600">{review.comment}</p>
@@ -55,21 +79,3 @@ function Review({ review, type }: { review: GymReview; type: string }) {
 }
 
 export default Review;
-
-interface GymSummary {
-  id: number;
-  name: string;
-  logoUrl: string;
-}
-interface UserSummary {
-  name: string;
-}
-
-interface GymReview {
-  id: number;
-  gym?: GymSummary;
-  user?: UserSummary;
-  rating: number;
-  comment: string;
-  createdAt: string; // ISO date string
-}

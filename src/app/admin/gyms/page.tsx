@@ -3,19 +3,9 @@
 import { useState, useMemo, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import {
-  Search,
-  MapPin,
-  Clock,
-  Star,
-  Mail,
-  DollarSign,
-  Plus,
-  Loader,
-} from "lucide-react";
+import { Search, MapPin, Mail, Plus, Loader } from "lucide-react";
 import Link from "next/link";
 import axios from "axios";
 // Mock data - in a real app, this would come from your databas
@@ -24,7 +14,7 @@ interface Gym {
   id: string;
   name: string;
   location: string;
-  locationName?: String;
+  locationName?: string;
   email: string;
   description: string;
   address: string;

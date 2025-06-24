@@ -9,7 +9,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 
-import { Trash2, Plus, Badge, Check } from "lucide-react";
+import { Plus, Badge, Check } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import axios from "axios";
@@ -21,10 +21,8 @@ import {
   SelectContent,
   SelectItem,
 } from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
 import {
   Dialog,
-  DialogTrigger,
   DialogContent,
   DialogHeader,
   DialogTitle,
@@ -134,7 +132,7 @@ function Plan({ id }: { id: string }) {
 
   const handelToggle = async (planId: string, isActive: boolean) => {
     try {
-      const res = await axios.get(
+      await axios.get(
         `${process.env.NEXT_PUBLIC_BASEURL}/plans/toggle/${planId}`
       );
       toast.success(`Plan turned ${!isActive ? "on" : "off"}`);
@@ -177,7 +175,10 @@ function Plan({ id }: { id: string }) {
         <CardContent className="space-y-6">
           <div className="grid-cols-2 grid gap-6">
             {plans.map((plan) => (
-              <div className="border-2 p-6 border-border rounded-xl hover:border-primary/50 transition-all hover:shadow-lg bg-card">
+              <div
+                className="border-2 p-6 border-border rounded-xl hover:border-primary/50 transition-all hover:shadow-lg bg-card"
+                key={plan.id}
+              >
                 <div className="flex justify-between items-start mb-6">
                   <div className="flex items-center gap-3">
                     <h1 className="font-bold text-2xl mb-1">{plan.name}</h1>

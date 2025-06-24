@@ -13,8 +13,7 @@ export default function AdminAuthWrapper({
   const router = useRouter();
 
   useEffect(() => {
-    if (user == null) return;
-    if (!user || !user.isAdmin) {
+    if (!user || !user.isVerified) {
       router.replace("/"); // Redirect to home or login
     }
   }, [user, router]);
@@ -23,7 +22,7 @@ export default function AdminAuthWrapper({
   //   return <div>Loading...</div>;
   // }
 
-  if (!user || !user.isAdmin) {
+  if (!user || !user.isVerified) {
     return null; // Or show a spinner
   }
 

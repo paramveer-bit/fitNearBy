@@ -7,133 +7,23 @@ import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
-import { MapPin, Search, X } from "lucide-react";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
+import { MapPin, Search, X, Filter } from "lucide-react";
 import GymCard from "@/components/home/gymCard";
-
-// Mock data - in a real app, this would come from your database
-const mockGyms: SportsClub[] = [
-  {
-    id: 1,
-    name: "FitZone Premium",
-    location: "Downtown",
-    address: "123 Main St, City Center",
-    latitude: 40.7128,
-    longitude: -74.006,
-    description: "Premium fitness facility with state-of-the-art equipment",
-    logoUrl: "/placeholder.svg?height=100&width=100",
-    rating: 4.8,
-    reviewCount: 124,
-    distance: 0.5,
-    plans: [
-      { name: "Monthly", price: 49.99, type: "MONTHLY" },
-      { name: "Yearly", price: 399.99, type: "YEARLY" },
-    ],
-    facilities: [
-      "Cardio Equipment",
-      "Weight Training",
-      "Group Classes",
-      "Swimming Pool",
-    ],
-    operatingHours: "6:00 AM - 10:00 PM",
-    images: "gym1", // assuming "gym1" is a placeholder for an image URL
-  },
-  {
-    id: 2,
-    name: "PowerHouse Gym",
-    location: "Midtown",
-    address: "456 Oak Ave, Midtown",
-    latitude: 40.7589,
-    longitude: -73.9851,
-    description: "Strength training focused gym with expert trainers",
-    logoUrl: "/placeholder.svg?height=100&width=100",
-    rating: 4.6,
-    reviewCount: 89,
-    distance: 1.2,
-    plans: [
-      { name: "Monthly", price: 39.99, type: "MONTHLY" },
-      { name: "Quarterly", price: 99.99, type: "QUARTERLY" },
-    ],
-    facilities: [
-      "Weight Training",
-      "Personal Training",
-      "Nutrition Counseling",
-    ],
-    operatingHours: "5:00 AM - 11:00 PM",
-    images: "gym2",
-  },
-  {
-    id: 3,
-    name: "Wellness Center",
-    location: "Uptown",
-    address: "789 Pine St, Uptown",
-    latitude: 40.7831,
-    longitude: -73.9712,
-    description: "Holistic wellness center with yoga and meditation",
-    logoUrl: "/placeholder.svg?height=100&width=100",
-    rating: 4.9,
-    reviewCount: 156,
-    distance: 2.1,
-    plans: [
-      { name: "Trial", price: 19.99, type: "TRIAL" },
-      { name: "Monthly", price: 59.99, type: "MONTHLY" },
-    ],
-    facilities: [
-      "Yoga Studio",
-      "Meditation Room",
-      "Spa Services",
-      "Healthy Cafe",
-    ],
-    operatingHours: "6:00 AM - 9:00 PM",
-    images: "gym3",
-  },
-  {
-    id: 4,
-    name: "Budget Fitness",
-    location: "Suburbs",
-    address: "321 Elm St, Suburbs",
-    latitude: 40.7282,
-    longitude: -74.0776,
-    description: "Affordable fitness option with essential equipment",
-    logoUrl: "/placeholder.svg?height=100&width=100",
-    rating: 4.2,
-    reviewCount: 67,
-    distance: 3.5,
-    plans: [
-      { name: "Monthly", price: 24.99, type: "MONTHLY" },
-      { name: "Yearly", price: 199.99, type: "YEARLY" },
-    ],
-    facilities: ["Cardio Equipment", "Weight Training", "Locker Rooms"],
-    operatingHours: "24/7",
-    images: "one",
-  },
-  {
-    id: 5,
-    name: "Elite Sports Club",
-    location: "Business District",
-    address: "555 Corporate Blvd, Business District",
-    latitude: 40.7505,
-    longitude: -73.9934,
-    description: "Luxury sports club with premium amenities",
-    logoUrl: "/placeholder.svg?height=100&width=100",
-    rating: 4.7,
-    reviewCount: 203,
-    distance: 1.8,
-    plans: [
-      { name: "Monthly", price: 89.99, type: "MONTHLY" },
-      { name: "Yearly", price: 899.99, type: "YEARLY" },
-    ],
-    facilities: [
-      "Cardio Equipment",
-      "Weight Training",
-      "Swimming Pool",
-      "Tennis Court",
-      "Spa Services",
-      "Personal Training",
-    ],
-    operatingHours: "5:00 AM - 10:00 PM",
-    images: "two",
-  },
-];
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import axios from "axios";
 
 const allFacilities = [
   "Only Mens",
@@ -153,11 +43,13 @@ interface Filters {
   priceRange: [number, number];
   maxDistance: number;
   facilities: string[];
-  open24Hours: boolean;
+  minRating: number;
 }
 
+import type { GYM } from "@/types";
+
 export default function GymsPage() {
-  const [gyms, setGyms] = useState(mockGyms);
+  const [gyms, setGyms] = useState<GYM[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [userLocation, setUserLocation] = useState<{
     lat: number;
@@ -165,19 +57,22 @@ export default function GymsPage() {
   } | null>(null);
   const [sortBy, setSortBy] = useState("distance");
   const [filters, setFilters] = useState<Filters>({
-    priceRange: [0, 100],
+    priceRange: [0, 20000],
     maxDistance: 10,
+    minRating: 0,
     facilities: [],
-    open24Hours: false,
   });
   const [activeFiltersCount, setActiveFiltersCount] = useState(0);
+  const [isMobileFiltersOpen, setIsMobileFiltersOpen] = useState(false);
+
   console.log("User Location:", userLocation);
+
   if (!gyms) {
-    setGyms(mockGyms);
     setSortBy("distance");
   }
+
+  // Getting user location
   useEffect(() => {
-    // Get user's location
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
@@ -197,17 +92,46 @@ export default function GymsPage() {
   useEffect(() => {
     let count = 0;
     if (filters.priceRange[0] > 0 || filters.priceRange[1] < 100) count++;
-    // if (filters.minRating > 0) count++;
     if (filters.maxDistance < 10) count++;
     if (filters.facilities.length > 0) count++;
-    if (filters.open24Hours) count++;
     setActiveFiltersCount(count);
   }, [filters]);
 
-  const applyFilters = (gyms: typeof mockGyms) => {
+  useEffect(() => {
+    if (!userLocation) {
+      const fetchGyms = async () => {
+        try {
+          const res = await axios.get(`${process.env.NEXT_PUBLIC_BASEURL}/gym`);
+          setGyms(res.data.data);
+        } catch (error) {
+          console.error("Error fetching gyms:", error);
+        }
+      };
+      fetchGyms();
+    } else {
+      const fetchGyms = async () => {
+        try {
+          const res = await axios.get(
+            `${process.env.NEXT_PUBLIC_BASEURL}/gym/location/getGyms`,
+            {
+              params: {
+                latitude: userLocation.lat,
+                longitude: userLocation.lng,
+              },
+            }
+          );
+          setGyms(res.data.data);
+        } catch (error) {
+          console.error("Error fetching gyms:", error);
+        }
+      };
+      fetchGyms();
+    }
+  }, [userLocation]);
+
+  const applyFilters = (gyms: GYM[]) => {
     return gyms.filter((gym) => {
-      // Price filter
-      const minPrice = Math.min(...gym.plans.map((p) => p.price));
+      const minPrice = Math.min(...gym.Plans.map((p) => p.newprice));
       if (
         minPrice < filters.priceRange[0] ||
         minPrice > filters.priceRange[1]
@@ -215,29 +139,21 @@ export default function GymsPage() {
         return false;
       }
 
-      // Rating filter
-      // if (gym.rating < filters.minRating) {
-      //   return false;
-      // }
+      if (gym.rating < filters.minRating) {
+        return false;
+      }
 
-      // Distance filter
       if (gym.distance > filters.maxDistance) {
         return false;
       }
 
-      // Facilities filter
       if (filters.facilities.length > 0) {
         const hasAllFacilities = filters.facilities.every((facility) =>
-          gym.facilities.includes(facility)
+          gym.Facilities.map((f) => f.name).includes(facility)
         );
         if (!hasAllFacilities) {
           return false;
         }
-      }
-
-      // 24/7 filter
-      if (filters.open24Hours && gym.operatingHours !== "24/7") {
-        return false;
       }
 
       return true;
@@ -253,7 +169,7 @@ export default function GymsPage() {
     )
   );
 
-  const sortedGyms = [...filteredGyms].sort((a, b) => {
+  const sortedGyms: GYM[] = [...filteredGyms].sort((a, b) => {
     switch (sortBy) {
       case "distance":
         return a.distance - b.distance;
@@ -261,8 +177,8 @@ export default function GymsPage() {
         return b.rating - a.rating;
       case "price":
         return (
-          Math.min(...a.plans.map((p) => p.price)) -
-          Math.min(...b.plans.map((p) => p.price))
+          Math.min(...a.Plans.map((p) => p.newprice)) -
+          Math.min(...b.Plans.map((p) => p.newprice))
         );
       default:
         return 0;
@@ -272,10 +188,9 @@ export default function GymsPage() {
   const clearAllFilters = () => {
     setFilters({
       priceRange: [0, 100],
-      // minRating: 0,
+      minRating: 0,
       maxDistance: 10,
       facilities: [],
-      open24Hours: false,
     });
   };
 
@@ -288,40 +203,158 @@ export default function GymsPage() {
     }));
   };
 
+  // Filter Panel Component
+  const FilterPanel = ({ className = "" }: { className?: string }) => (
+    <div className={`space-y-6 ${className}`}>
+      <div>
+        <h2 className="text-lg font-semibold text-gray-900 mb-4">Filters</h2>
+      </div>
+
+      {/* Sort By */}
+      <div className="space-y-3">
+        <Label className="text-sm font-medium">Sort By</Label>
+        <Select value={sortBy} onValueChange={setSortBy}>
+          <SelectTrigger>
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="distance">Distance</SelectItem>
+            <SelectItem value="rating">Rating</SelectItem>
+            <SelectItem value="price">Price</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      {/* Price Range */}
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <Label className="text-sm font-medium">Price Range (Monthly)</Label>
+          <span className="text-sm text-gray-600">
+            ${filters.priceRange[0]} - ${filters.priceRange[1]}
+          </span>
+        </div>
+        <Slider
+          value={filters.priceRange}
+          onValueChange={(value) =>
+            setFilters((prev) => ({
+              ...prev,
+              priceRange: value as [number, number],
+            }))
+          }
+          max={100}
+          min={0}
+          step={5}
+          className="w-full"
+        />
+      </div>
+
+      {/* Minimum Rating */}
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <Label className="text-sm font-medium">Minimum Rating</Label>
+          <span className="text-sm text-gray-600">
+            {filters.minRating > 0
+              ? `${filters.minRating}+ stars`
+              : "Any rating"}
+          </span>
+        </div>
+        <Slider
+          value={[filters.minRating]}
+          onValueChange={(value) =>
+            setFilters((prev) => ({ ...prev, minRating: value[0] }))
+          }
+          max={5}
+          min={0}
+          step={0.1}
+          className="w-full"
+        />
+      </div>
+
+      {/* Maximum Distance */}
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <Label className="text-sm font-medium">Maximum Distance</Label>
+          <span className="text-sm text-gray-600">
+            {filters.maxDistance < 10
+              ? `${filters.maxDistance} km`
+              : "Any distance"}
+          </span>
+        </div>
+        <Slider
+          value={[filters.maxDistance]}
+          onValueChange={(value) =>
+            setFilters((prev) => ({ ...prev, maxDistance: value[0] }))
+          }
+          max={10}
+          min={0.5}
+          step={0.5}
+          className="w-full"
+        />
+      </div>
+
+      {/* Facilities */}
+      <div className="space-y-3">
+        <Label className="text-sm font-medium">Required Facilities</Label>
+        <div className="space-y-2 max-h-48 overflow-y-auto">
+          {allFacilities.map((facility) => (
+            <div key={facility} className="flex items-center space-x-2">
+              <Checkbox
+                id={facility}
+                checked={filters.facilities.includes(facility)}
+                onCheckedChange={() => toggleFacility(facility)}
+              />
+              <Label htmlFor={facility} className="text-sm">
+                {facility}
+              </Label>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Clear Filters */}
+      {activeFiltersCount > 0 && (
+        <Button variant="outline" onClick={clearAllFilters} className="w-full">
+          <X className="h-4 w-4 mr-2" />
+          Clear All Filters ({activeFiltersCount})
+        </Button>
+      )}
+    </div>
+  );
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Hero and search section */}
-      <section className="bg-gradient-to-r from-gray-900 to-gray-600 text-white py-16">
+      <section className="bg-gradient-to-r from-gray-900 to-gray-600 text-white py-8 sm:py-12 lg:py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-4xl md:text-6xl font-bold mb-4">
+          <h2 className="text-2xl sm:text-4xl md:text-5xl lg:text-6xl font-bold mb-4">
             Find Your Perfect Gym
           </h2>
-          <p className="text-xl mb-8 opacity-90">
+          <p className="text-base sm:text-lg lg:text-xl mb-6 sm:mb-8 opacity-90 max-w-2xl mx-auto">
             Discover gyms near you with the best facilities and pricing
           </p>
 
           {/* Search Bar */}
-          <div className="max-w-2xl mx-auto">
-            <div className="flex flex-col sm:flex-row gap-4">
+          <div className="max-w-4xl mx-auto">
+            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
               <div className="relative flex-1">
-                <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 sm:w-5 sm:h-5" />
                 <Input
                   placeholder="Enter your location"
-                  className="pl-10 h-12 text-gray-900"
+                  className="pl-9 sm:pl-10 h-10 sm:h-12 text-gray-900 text-sm sm:text-base"
                 />
               </div>
               <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 sm:w-5 sm:h-5" />
                 <Input
                   placeholder="Search gyms..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 h-12 text-gray-900"
+                  className="pl-9 sm:pl-10 h-10 sm:h-12 text-gray-900 text-sm sm:text-base"
                 />
               </div>
               <Button
                 size="lg"
-                className="h-12 px-8 bg-white text-blue-600 hover:bg-gray-100"
+                className="h-10 sm:h-12 px-6 sm:px-8 bg-white text-blue-600 hover:bg-gray-100 text-sm sm:text-base"
               >
                 Search
               </Button>
@@ -330,161 +363,101 @@ export default function GymsPage() {
         </div>
       </section>
 
-      <div className="flex ">
-        {/* Filer Side bar */}
-        <div className="w-80 bg-white border-r border-gray-200 p-6 overflow-y-auto">
-          <div className="space-y-6">
-            <div>
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">
-                Filters
-              </h2>
-            </div>
-
-            {/* Price Range */}
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <Label className="text-sm font-medium">
-                  Price Range (Monthly)
-                </Label>
-                <span className="text-sm text-gray-600">
-                  ${filters.priceRange[0]} - ${filters.priceRange[1]}
-                </span>
-              </div>
-              <Slider
-                value={filters.priceRange}
-                onValueChange={(value) =>
-                  setFilters((prev) => ({
-                    ...prev,
-                    priceRange: value as [number, number],
-                  }))
-                }
-                max={100}
-                min={0}
-                step={5}
-                className="w-full"
-              />
-            </div>
-
-            {/* Minimum Rating */}
-            {/* <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <Label className="text-sm font-medium">Minimum Rating</Label>
-                <span className="text-sm text-gray-600">
-                  {filters.minRating > 0
-                    ? `${filters.minRating}+ stars`
-                    : "Any rating"}
-                </span>
-              </div>
-              <Slider
-                value={[filters.minRating]}
-                onValueChange={(value) =>
-                  setFilters((prev) => ({ ...prev, minRating: value[0] }))
-                }
-                max={5}
-                min={0}
-                step={0.1}
-                className="w-full"
-              />
-            </div> */}
-
-            {/* Maximum Distance */}
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <Label className="text-sm font-medium">Maximum Distance</Label>
-                <span className="text-sm text-gray-600">
-                  {filters.maxDistance < 10
-                    ? `${filters.maxDistance} km`
-                    : "Any distance"}
-                </span>
-              </div>
-              <Slider
-                value={[filters.maxDistance]}
-                onValueChange={(value) =>
-                  setFilters((prev) => ({ ...prev, maxDistance: value[0] }))
-                }
-                max={10}
-                min={0.5}
-                step={0.5}
-                className="w-full"
-              />
-            </div>
-
-            {/* 24/7 Filter */}
-            <div className="flex items-center space-x-2">
-              <Checkbox
-                id="open24Hours"
-                checked={filters.open24Hours}
-                onCheckedChange={(checked) =>
-                  setFilters((prev) => ({
-                    ...prev,
-                    open24Hours: checked as boolean,
-                  }))
-                }
-              />
-              <Label htmlFor="open24Hours" className="text-sm font-medium">
-                Open 24/7
-              </Label>
-            </div>
-
-            {/* Facilities */}
-            <div className="space-y-3">
-              <Label className="text-sm font-medium">Required Facilities</Label>
-              <div className="space-y-2 max-h-48 overflow-y-auto">
-                {allFacilities.map((facility) => (
-                  <div key={facility} className="flex items-center space-x-2">
-                    <Checkbox
-                      id={facility}
-                      checked={filters.facilities.includes(facility)}
-                      onCheckedChange={() => toggleFacility(facility)}
-                    />
-                    <Label htmlFor={facility} className="text-sm">
-                      {facility}
-                    </Label>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Clear Filters */}
-            {activeFiltersCount > 0 && (
-              <Button
-                variant="outline"
-                onClick={clearAllFilters}
-                className="w-full"
-              >
-                <X className="h-4 w-4 mr-2" />
-                Clear All Filters ({activeFiltersCount})
-              </Button>
-            )}
-          </div>
+      <div className="flex flex-col lg:flex-row">
+        {/* Desktop Filter Sidebar */}
+        <div className="hidden lg:block w-80 bg-white border-r border-gray-200 p-6 overflow-y-auto max-h-screen sticky top-0">
+          <FilterPanel />
         </div>
+
         {/* Main Content */}
-        <div className="flex-1 p-6">
+        <div className="flex-1 p-4 sm:p-6">
+          {/* Mobile Filter Button and Sort */}
+          <div className="lg:hidden mb-4 sm:mb-6 flex flex-col sm:flex-row gap-3 sm:gap-4 sm:items-center sm:justify-between">
+            <div className="flex items-center gap-3">
+              <Sheet
+                open={isMobileFiltersOpen}
+                onOpenChange={setIsMobileFiltersOpen}
+              >
+                <SheetTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="flex items-center gap-2"
+                  >
+                    <Filter className="h-4 w-4 px-2" />
+                    Filters
+                    {activeFiltersCount > 0 && (
+                      <Badge
+                        variant="secondary"
+                        className="ml-1 px-1.5 py-0.5 text-xs"
+                      >
+                        {activeFiltersCount}
+                      </Badge>
+                    )}
+                  </Button>
+                </SheetTrigger>
+                <SheetContent side="left" className="w-80 sm:w-96">
+                  <SheetHeader>
+                    <SheetTitle>Filters</SheetTitle>
+                  </SheetHeader>
+                  <div className="mt-6 overflow-y-auto max-h-[calc(100vh-120px)]">
+                    <FilterPanel />
+                  </div>
+                </SheetContent>
+              </Sheet>
+
+              {/* Mobile Sort */}
+              <div className="flex items-center gap-2">
+                <Label className="text-sm font-medium whitespace-nowrap">
+                  Sort:
+                </Label>
+                <Select value={sortBy} onValueChange={setSortBy}>
+                  <SelectTrigger className="w-32">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="distance">Distance</SelectItem>
+                    <SelectItem value="rating">Rating</SelectItem>
+                    <SelectItem value="price">Price</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </div>
+
           {/* Active Filters Display */}
           {activeFiltersCount > 0 && (
-            <div className="mb-6 flex flex-wrap gap-2">
+            <div className="mb-4 sm:mb-6 flex flex-wrap gap-2">
               {filters.priceRange[0] > 0 || filters.priceRange[1] < 100 ? (
-                <Badge variant="secondary" className="px-3 py-1">
+                <Badge
+                  variant="secondary"
+                  className="px-2 sm:px-3 py-1 text-xs sm:text-sm"
+                >
                   Price: ${filters.priceRange[0]} - ${filters.priceRange[1]}
                 </Badge>
               ) : null}
-              {/* {filters.minRating > 0 && (
-                <Badge variant="secondary" className="px-3 py-1">
+              {filters.minRating > 0 && (
+                <Badge
+                  variant="secondary"
+                  className="px-2 sm:px-3 py-1 text-xs sm:text-sm"
+                >
                   Rating: {filters.minRating}+ stars
                 </Badge>
-              )} */}
+              )}
               {filters.maxDistance < 10 && (
-                <Badge variant="secondary" className="px-3 py-1">
+                <Badge
+                  variant="secondary"
+                  className="px-2 sm:px-3 py-1 text-xs sm:text-sm"
+                >
                   Distance: ≤ {filters.maxDistance} km
                 </Badge>
               )}
-              {filters.open24Hours && (
-                <Badge variant="secondary" className="px-3 py-1">
-                  24/7 Open
-                </Badge>
-              )}
               {filters.facilities.map((facility) => (
-                <Badge key={facility} variant="secondary" className="px-3 py-1">
+                <Badge
+                  key={facility}
+                  variant="secondary"
+                  className="px-2 sm:px-3 py-1 text-xs sm:text-sm"
+                >
                   {facility}
                 </Badge>
               ))}
@@ -492,12 +465,12 @@ export default function GymsPage() {
           )}
 
           {/* Results Count */}
-          <div className="mb-6">
-            <p className="text-gray-600">
+          <div className="mb-4 sm:mb-6">
+            <p className="text-gray-600 text-sm sm:text-base">
               Found {sortedGyms.length} gym{sortedGyms.length !== 1 ? "s" : ""}{" "}
               near you
               {activeFiltersCount > 0 && (
-                <span className="ml-2 text-sm">
+                <span className="ml-2 text-xs sm:text-sm">
                   ({activeFiltersCount} filter
                   {activeFiltersCount !== 1 ? "s" : ""} applied)
                 </span>
@@ -506,19 +479,19 @@ export default function GymsPage() {
           </div>
 
           {/* Gym Cards */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 sm:gap-6 lg:gap-8">
             {sortedGyms.map((gym) => (
               <GymCard gym={gym} key={gym.id} />
             ))}
           </div>
-          {/* No Gym Found */}
 
+          {/* No Gym Found */}
           {sortedGyms.length === 0 && (
-            <div className="text-center py-12">
-              <p className="text-gray-600 text-lg">
+            <div className="text-center py-8 sm:py-12">
+              <p className="text-gray-600 text-base sm:text-lg mb-4">
                 No gyms found matching your search criteria.
               </p>
-              <div className="mt-4 space-x-2">
+              <div className="flex flex-col sm:flex-row gap-3 sm:gap-2 items-center justify-center">
                 <Button variant="outline" onClick={() => setSearchTerm("")}>
                   Clear Search
                 </Button>
@@ -534,28 +507,4 @@ export default function GymsPage() {
       </div>
     </div>
   );
-}
-
-interface Plan {
-  name: string;
-  price: number;
-  type: "MONTHLY" | "YEARLY" | "QUARTERLY" | "TRIAL";
-}
-
-interface SportsClub {
-  id: number;
-  name: string;
-  location: string;
-  address: string;
-  latitude: number;
-  longitude: number;
-  description: string;
-  logoUrl: string;
-  rating: number;
-  reviewCount: number;
-  distance: number;
-  plans: Plan[];
-  facilities: string[];
-  operatingHours: string;
-  images: string; // assuming "two" is a placeholder for two image URLs
 }

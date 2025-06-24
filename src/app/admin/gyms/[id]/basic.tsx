@@ -52,7 +52,7 @@ function Basic({ id }: { id: string }) {
       }
     };
     fetchData();
-  }, []);
+  }, [id]);
   return (
     <Card>
       <CardHeader>

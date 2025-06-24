@@ -11,14 +11,23 @@ import { Button } from "@/components/ui/button";
 import { MapPin, Star, Clock } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import gym1 from "@/assets/gym1.png";
-import gym2 from "@/assets/gym2.png";
-import gym3 from "@/assets/gym3.png";
-import one from "@/assets/one.webp";
-import two from "@/assets/two.webp";
+import { GYM } from "@/types";
 import BlueTick from "@/assets/blueTick.svg";
 
-function GymCard({ gym }: { gym: SportsClub }) {
+const getMonth = (type: string) => {
+  switch (type) {
+    case "MONTHLY":
+      return 1;
+    case "YEARLY":
+      return 12;
+    case "QUARTERLY":
+      return 3;
+    case "HALF_YEARLY":
+      return 6;
+  }
+};
+
+function GymCard({ gym }: { gym: GYM }) {
   const getStatusColor = (distance: number) => {
     if (distance < 1) return "bg-green-100 text-green-800";
     if (distance < 3) return "bg-blue-100 text-blue-800";
@@ -26,23 +35,6 @@ function GymCard({ gym }: { gym: SportsClub }) {
     return "bg-gray-100 text-gray-800";
   };
 
-  const getImageSrc = (image: string) => {
-    switch (image) {
-      case "one":
-        return one;
-      case "two":
-        return two;
-      case "gym1":
-        return gym1;
-      case "gym2":
-        return gym2;
-      case "gym3":
-        return gym3;
-      default:
-        return "/placeholder.svg"; // Fallback image
-    }
-  };
-  const imageSrc = getImageSrc(gym.images);
   return (
     <Card
       key={gym.id}
@@ -50,16 +42,19 @@ function GymCard({ gym }: { gym: SportsClub }) {
     >
       <div className="relative h-48">
         <Image
-          src={imageSrc}
+          src={gym.logoUrl}
           alt={`${gym.name}`}
           fill
           className="object-cover"
         />
-        <div className="absolute top-4 right-4">
-          <Badge className={`${getStatusColor(gym.distance)}`}>
-            {gym.distance} km away
-          </Badge>
-        </div>
+        {/* Gym Distance */}
+        {gym.distance != null && (
+          <div className="absolute top-4 right-4">
+            <Badge className={`${getStatusColor(gym.distance)}`}>
+              {gym.distance} km away
+            </Badge>
+          </div>
+        )}
       </div>
       <CardHeader className="pb-2">
         <div className="flex items-start justify-between">
@@ -83,7 +78,7 @@ function GymCard({ gym }: { gym: SportsClub }) {
               <span className="ml-1 font-semibold text-lg">{gym.rating}</span>
             </div>
             <div className="text-sm text-gray-600">
-              ({gym.reviewCount} reviews)
+              ({gym._count.Reviews} reviews)
             </div>
           </div>
         </div>
@@ -96,15 +91,18 @@ function GymCard({ gym }: { gym: SportsClub }) {
 
         <div className="flex items-center text-sm text-gray-600">
           <Clock className="h-4 w-4 mr-2" />
-          {gym.operatingHours}
+          {gym.GymOperatingHours[0]?.openAt +
+            " - " +
+            gym.GymOperatingHours[0]?.closeAt}
         </div>
 
         <div className="flex flex-wrap gap-2">
-          {gym.facilities.map((facility, index) => (
-            <Badge key={index} variant="secondary">
-              {facility}
-            </Badge>
-          ))}
+          {gym.Facilities != null &&
+            gym.Facilities.map((facility, index) => (
+              <Badge key={index} variant="secondary">
+                {facility.name}
+              </Badge>
+            ))}
         </div>
 
         <div className="border-t pt-4">
@@ -112,10 +110,14 @@ function GymCard({ gym }: { gym: SportsClub }) {
             <div>
               <span className="text-sm text-gray-600">Starting from</span>
               <div className="font-bold text-2xl">
-                {Math.min(...gym.plans.map((p) => p.price))}
-                <span className="text-sm font-normal text-gray-600">
-                  /month
-                </span>
+                {Number(
+                  Math.min(
+                    ...gym.Plans.map(
+                      (p) => p.newprice / (getMonth(p.type) || 1)
+                    )
+                  )
+                ).toFixed(2)}
+                <span className="text-sm font-normal text-gray-600">/Day</span>
               </div>
             </div>
             <Button size="lg" asChild>
@@ -129,27 +131,3 @@ function GymCard({ gym }: { gym: SportsClub }) {
 }
 
 export default GymCard;
-
-interface Plan {
-  name: string;
-  price: number;
-  type: "MONTHLY" | "YEARLY" | "QUARTERLY" | "TRIAL";
-}
-
-interface SportsClub {
-  id: number;
-  name: string;
-  location: string;
-  address: string;
-  latitude: number;
-  longitude: number;
-  description: string;
-  logoUrl: string;
-  rating: number;
-  reviewCount: number;
-  distance: number;
-  plans: Plan[];
-  facilities: string[];
-  operatingHours: string;
-  images: string; // assuming "two" is a placeholder for two image URLs
-}

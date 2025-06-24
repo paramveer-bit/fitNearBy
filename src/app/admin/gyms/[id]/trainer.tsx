@@ -8,7 +8,7 @@ import {
   CardContent,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Plus, Trash2, X } from "lucide-react";
+import { Plus, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
@@ -44,19 +44,6 @@ interface TrainerFormData {
   experience: number;
   trained: number;
 }
-
-const trainers = [
-  {
-    id: 1,
-    name: "param",
-    email: "abc@gmail.com",
-    bio: "jnjknkjnkjnkjnj",
-    profileUrl: "",
-    specialties: ["vdvdev", "sfdfrgdgr"],
-    certifications: ["cert1", "cert2"],
-    experience: 5,
-  },
-];
 
 function Trainer({ id }: { id: string }) {
   const [open, setOpen] = useState(false);
@@ -140,6 +127,7 @@ function Trainer({ id }: { id: string }) {
       );
       handleInputChange("profileUrl", res.data.data.url);
     } catch (error) {
+      console.error("Error uploading image:", error);
       toast.error("Error in uploading the image");
       setSubmitting(false);
       return;

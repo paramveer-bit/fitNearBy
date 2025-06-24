@@ -52,7 +52,7 @@ function Facilities({ id }: { id: string }) {
 
   const removeFacility = async (facilityId: string) => {
     try {
-      const res = await axios.delete(
+      await axios.delete(
         `${process.env.NEXT_PUBLIC_BASEURL}/facilities/${facilityId}`
       );
       setFacility((prev) =>
