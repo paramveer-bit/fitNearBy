@@ -20,6 +20,7 @@ function TrainerCard({ gymId }: { gymId: string }) {
         );
         setTrainers(res.data.data);
       } catch (error) {
+        console.error("Error fetching trainers:", error);
       } finally {
         setLoading(false);
       }

@@ -33,8 +33,7 @@ export default function AuthDialog({
   id,
 }: AuthDialogProps) {
   const router = useRouter();
-  const { user, setUser } = useContext(UserContext);
-  console.log("User Context:--------", user);
+  const { setUser } = useContext(UserContext);
 
   const [loginData, setLoginData] = useState({
     email: "",
@@ -49,14 +48,15 @@ export default function AuthDialog({
     otp: "",
   });
 
+  const [isSigningUp, setIsSigningUp] = useState(false);
+  const [signing, setSigning] = useState(false);
   // New state to track if we're in OTP verification stage
   const [isOtpStage, setIsOtpStage] = useState(false);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Login data:", loginData);
-
     try {
+      setSigning(true);
       const res = await axios.post(
         `${process.env.NEXT_PUBLIC_BASEURL}/user/auth/signIn`,
         { email: loginData.email, password: loginData.password },
@@ -64,11 +64,19 @@ export default function AuthDialog({
       );
       console.log(res);
     } catch (error) {
-      console.error("Login error:", error);
+      if (axios.isAxiosError(error) && error.response) {
+        // Show exactly the backend's message
+        toast.error(error.response.data.message);
+      } else {
+        // Fallback for network/CORS/unexpected errors
+        toast.error("An unexpected error occurred");
+      }
       return;
+    } finally {
+      setSigning(false);
     }
 
-    await fetchUser();
+    // await fetchUser();
 
     if (type === "book") {
       console.log("Booking gym with ID:", id);
@@ -110,6 +118,7 @@ export default function AuthDialog({
       }
 
       try {
+        setIsSigningUp(true);
         // Make API call to send OTP
         const res = await axios.post(
           `${process.env.NEXT_PUBLIC_BASEURL}/user/auth/signup`,
@@ -124,9 +133,16 @@ export default function AuthDialog({
         console.log("OTP sent successfully:", res.data);
         toast.success("OTP sent to your email/phone");
         setIsOtpStage(true); // Move to OTP verification stage
-      } catch (error) {
-        console.error("Error sending OTP:", error);
-        toast.error("Failed to send OTP. Please try again.");
+      } catch (error: unknown) {
+        if (axios.isAxiosError(error) && error.response) {
+          // Show exactly the backend's message
+          toast.error(error.response.data.message);
+        } else {
+          // Fallback for network/CORS/unexpected errors
+          toast.error("An unexpected error occurred");
+        }
+      } finally {
+        setIsSigningUp(false);
       }
     } else {
       // Second stage: OTP verification
@@ -138,6 +154,7 @@ export default function AuthDialog({
       }
 
       try {
+        setIsSigningUp(true);
         // Make API call to verify OTP and complete signup
         const res = await axios.post(
           `${process.env.NEXT_PUBLIC_BASEURL}/user/auth/verifyUser`,
@@ -181,9 +198,16 @@ export default function AuthDialog({
         onOpenChange(false);
 
         // Optionally redirect or fetch user data
-      } catch (error) {
-        console.error("Error verifying OTP:", error);
-        toast.error("Invalid OTP. Please try again.");
+      } catch (error: unknown) {
+        if (axios.isAxiosError(error) && error.response) {
+          // Show exactly the backend's message
+          toast.error(error.response.data.message);
+        } else {
+          // Fallback for network/CORS/unexpected errors
+          toast.error("An unexpected error occurred");
+        }
+      } finally {
+        setIsSigningUp(false);
       }
     }
   };
@@ -196,8 +220,14 @@ export default function AuthDialog({
       );
       console.log("User data:", res.data);
       setUser(res.data.data);
-    } catch (error) {
-      console.error("Error fetching user data:", error);
+    } catch (error: unknown) {
+      if (axios.isAxiosError(error) && error.response) {
+        // Show exactly the backend's message
+        toast.error(error.response.data.message);
+      } else {
+        // Fallback for network/CORS/unexpected errors
+        toast.error("An unexpected error occurred");
+      }
     }
   };
 
@@ -256,7 +286,7 @@ export default function AuthDialog({
                   required
                 />
               </div>
-              <Button type="submit" className="w-full">
+              <Button type="submit" className="w-full" disabled={signing}>
                 Login
               </Button>
             </form>
@@ -330,8 +360,8 @@ export default function AuthDialog({
               {isOtpStage && (
                 <div className="space-y-4">
                   <div className="text-center text-sm text-muted-foreground">
-                    We've sent an OTP to your email/phone. Please enter it below
-                    to verify your account.
+                    We&apos;ve sent an OTP to your email/phone. Please enter it
+                    below to verify your account.
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="signup-otp">Enter OTP</Label>
@@ -352,13 +382,14 @@ export default function AuthDialog({
                     variant="outline"
                     className="w-full"
                     onClick={() => setIsOtpStage(false)}
+                    disabled={isSigningUp}
                   >
                     Back to Sign Up
                   </Button>
                 </div>
               )}
 
-              <Button type="submit" className="w-full">
+              <Button type="submit" className="w-full" disabled={isSigningUp}>
                 {isOtpStage ? "Verify OTP" : "Sign Up"}
               </Button>
             </form>

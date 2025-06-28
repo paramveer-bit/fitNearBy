@@ -9,21 +9,21 @@ export default function AdminAuthWrapper({
 }: {
   children: React.ReactNode;
 }) {
-  const { user } = useContext(UserContext);
+  const { user, isLoading } = useContext(UserContext);
   const router = useRouter();
-
+  console.log("AdminAuthWrapper: user", user);
   useEffect(() => {
-    if (user == null) return;
-    if (!user || !user.isAdmin) {
+    // if (user == null) return;
+    if (!isLoading && (!user || user.role !== "admin")) {
       router.replace("/"); // Redirect to home or login
     }
-  }, [user, router]);
+  }, [user, isLoading, router]);
 
-  // if (user === null) {
-  //   return <div>Loading...</div>;
-  // }
+  if (isLoading) {
+    return <div>Loading...</div>;
+  }
 
-  if (!user || !user.isAdmin) {
+  if (!user || user.role !== "admin") {
     return null; // Or show a spinner
   }
 

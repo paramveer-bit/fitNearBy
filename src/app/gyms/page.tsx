@@ -8,13 +8,15 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from "@/components/ui/sheet";
-import { MapPin, Search, X, Filter } from "lucide-react";
+  MapPin,
+  Search,
+  X,
+  SlidersHorizontal,
+  Filter,
+  Star,
+  TrendingUp,
+  Zap,
+} from "lucide-react";
 import GymCard from "@/components/home/gymCard";
 import {
   Select,
@@ -23,7 +25,18 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
+import { Card, CardContent } from "@/components/ui/card";
 import axios from "axios";
+import type { GYM } from "@/types";
+import { toast } from "sonner";
 
 const allFacilities = [
   "Only Mens",
@@ -46,8 +59,6 @@ interface Filters {
   minRating: number;
 }
 
-import type { GYM } from "@/types";
-
 export default function GymsPage() {
   const [gyms, setGyms] = useState<GYM[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
@@ -63,13 +74,7 @@ export default function GymsPage() {
     facilities: [],
   });
   const [activeFiltersCount, setActiveFiltersCount] = useState(0);
-  const [isMobileFiltersOpen, setIsMobileFiltersOpen] = useState(false);
-
-  console.log("User Location:", userLocation);
-
-  if (!gyms) {
-    setSortBy("distance");
-  }
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
 
   // Getting user location
   useEffect(() => {
@@ -102,9 +107,15 @@ export default function GymsPage() {
       const fetchGyms = async () => {
         try {
           const res = await axios.get(`${process.env.NEXT_PUBLIC_BASEURL}/gym`);
-          setGyms(res.data.data);
-        } catch (error) {
-          console.error("Error fetching gyms:", error);
+          setGyms(res.data.data); // Duplicate data to simulate more gyms
+        } catch (error: unknown) {
+          if (axios.isAxiosError(error) && error.response) {
+            // Show exactly the backend's message
+            toast.error(error.response.data.message);
+          } else {
+            // Fallback for network/CORS/unexpected errors
+            toast.error("An unexpected error occurred");
+          }
         }
       };
       fetchGyms();
@@ -121,8 +132,14 @@ export default function GymsPage() {
             }
           );
           setGyms(res.data.data);
-        } catch (error) {
-          console.error("Error fetching gyms:", error);
+        } catch (error: unknown) {
+          if (axios.isAxiosError(error) && error.response) {
+            // Show exactly the backend's message
+            toast.error(error.response.data.message);
+          } else {
+            // Fallback for network/CORS/unexpected errors
+            toast.error("An unexpected error occurred");
+          }
         }
       };
       fetchGyms();
@@ -203,117 +220,174 @@ export default function GymsPage() {
     }));
   };
 
-  // Filter Panel Component
-  const FilterPanel = ({ className = "" }: { className?: string }) => (
-    <div className={`space-y-6 ${className}`}>
-      <div>
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Filters</h2>
+  // Filter content component
+  const FilterContent = () => (
+    <div className="space-y-8">
+      <div className="flex items-center gap-3">
+        <div className="p-2 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg">
+          <Filter className="h-5 w-5 text-white" />
+        </div>
+        <div>
+          <h2 className="text-xl font-bold text-gray-900">Filters</h2>
+          <p className="text-sm text-gray-500">Refine your search</p>
+        </div>
       </div>
 
       {/* Sort By */}
-      <div className="space-y-3">
-        <Label className="text-sm font-medium">Sort By</Label>
-        <Select value={sortBy} onValueChange={setSortBy}>
-          <SelectTrigger>
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="distance">Distance</SelectItem>
-            <SelectItem value="rating">Rating</SelectItem>
-            <SelectItem value="price">Price</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
+      <Card className="border-0 shadow-sm bg-gradient-to-br from-gray-50 to-white">
+        <CardContent className="p-4 space-y-3">
+          <div className="flex items-center gap-2">
+            <TrendingUp className="h-4 w-4 text-blue-600" />
+            <Label className="text-sm font-semibold text-gray-900">
+              Sort By
+            </Label>
+          </div>
+          <Select value={sortBy} onValueChange={setSortBy}>
+            <SelectTrigger className="border-gray-200 focus:border-blue-500 focus:ring-blue-500/20">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="distance">📍 Distance</SelectItem>
+              <SelectItem value="rating">⭐ Rating</SelectItem>
+              <SelectItem value="price">💰 Price</SelectItem>
+            </SelectContent>
+          </Select>
+        </CardContent>
+      </Card>
 
       {/* Price Range */}
-      <div className="space-y-3">
-        <div className="flex items-center justify-between">
-          <Label className="text-sm font-medium">Price Range (Monthly)</Label>
-          <span className="text-sm text-gray-600">
-            ${filters.priceRange[0]} - ${filters.priceRange[1]}
-          </span>
-        </div>
-        <Slider
-          value={filters.priceRange}
-          onValueChange={(value) =>
-            setFilters((prev) => ({
-              ...prev,
-              priceRange: value as [number, number],
-            }))
-          }
-          max={100}
-          min={0}
-          step={5}
-          className="w-full"
-        />
-      </div>
-
-      {/* Minimum Rating */}
-      <div className="space-y-3">
-        <div className="flex items-center justify-between">
-          <Label className="text-sm font-medium">Minimum Rating</Label>
-          <span className="text-sm text-gray-600">
-            {filters.minRating > 0
-              ? `${filters.minRating}+ stars`
-              : "Any rating"}
-          </span>
-        </div>
-        <Slider
-          value={[filters.minRating]}
-          onValueChange={(value) =>
-            setFilters((prev) => ({ ...prev, minRating: value[0] }))
-          }
-          max={5}
-          min={0}
-          step={0.1}
-          className="w-full"
-        />
-      </div>
-
-      {/* Maximum Distance */}
-      <div className="space-y-3">
-        <div className="flex items-center justify-between">
-          <Label className="text-sm font-medium">Maximum Distance</Label>
-          <span className="text-sm text-gray-600">
-            {filters.maxDistance < 10
-              ? `${filters.maxDistance} km`
-              : "Any distance"}
-          </span>
-        </div>
-        <Slider
-          value={[filters.maxDistance]}
-          onValueChange={(value) =>
-            setFilters((prev) => ({ ...prev, maxDistance: value[0] }))
-          }
-          max={10}
-          min={0.5}
-          step={0.5}
-          className="w-full"
-        />
-      </div>
-
-      {/* Facilities */}
-      <div className="space-y-3">
-        <Label className="text-sm font-medium">Required Facilities</Label>
-        <div className="space-y-2 max-h-48 overflow-y-auto">
-          {allFacilities.map((facility) => (
-            <div key={facility} className="flex items-center space-x-2">
-              <Checkbox
-                id={facility}
-                checked={filters.facilities.includes(facility)}
-                onCheckedChange={() => toggleFacility(facility)}
-              />
-              <Label htmlFor={facility} className="text-sm">
-                {facility}
+      <Card className="border-0 shadow-sm bg-gradient-to-br from-green-50 to-white">
+        <CardContent className="p-4 space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span className="text-lg">💰</span>
+              <Label className="text-sm font-semibold text-gray-900">
+                Price Range
               </Label>
             </div>
-          ))}
-        </div>
-      </div>
+            <Badge
+              variant="secondary"
+              className="bg-green-100 text-green-800 border-green-200"
+            >
+              ${filters.priceRange[0]} - ${filters.priceRange[1]}
+            </Badge>
+          </div>
+          <Slider
+            value={filters.priceRange}
+            onValueChange={(value) =>
+              setFilters((prev) => ({
+                ...prev,
+                priceRange: value as [number, number],
+              }))
+            }
+            max={100}
+            min={0}
+            step={5}
+            className="w-full [&_[role=slider]]:bg-green-600 [&_[role=slider]]:border-green-600"
+          />
+        </CardContent>
+      </Card>
+
+      {/* Minimum Rating */}
+      <Card className="border-0 shadow-sm bg-gradient-to-br from-yellow-50 to-white">
+        <CardContent className="p-4 space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Star className="h-4 w-4 text-yellow-500 fill-current" />
+              <Label className="text-sm font-semibold text-gray-900">
+                Minimum Rating
+              </Label>
+            </div>
+            <Badge
+              variant="secondary"
+              className="bg-yellow-100 text-yellow-800 border-yellow-200"
+            >
+              {filters.minRating > 0 ? `${filters.minRating}+ ⭐` : "Any"}
+            </Badge>
+          </div>
+          <Slider
+            value={[filters.minRating]}
+            onValueChange={(value) =>
+              setFilters((prev) => ({ ...prev, minRating: value[0] }))
+            }
+            max={5}
+            min={0}
+            step={0.1}
+            className="w-full [&_[role=slider]]:bg-yellow-500 [&_[role=slider]]:border-yellow-500"
+          />
+        </CardContent>
+      </Card>
+
+      {/* Maximum Distance */}
+      <Card className="border-0 shadow-sm bg-gradient-to-br from-purple-50 to-white">
+        <CardContent className="p-4 space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <MapPin className="h-4 w-4 text-purple-600" />
+              <Label className="text-sm font-semibold text-gray-900">
+                Max Distance
+              </Label>
+            </div>
+            <Badge
+              variant="secondary"
+              className="bg-purple-100 text-purple-800 border-purple-200"
+            >
+              {filters.maxDistance < 10 ? `${filters.maxDistance} km` : "Any"}
+            </Badge>
+          </div>
+          <Slider
+            value={[filters.maxDistance]}
+            onValueChange={(value) =>
+              setFilters((prev) => ({ ...prev, maxDistance: value[0] }))
+            }
+            max={10}
+            min={0.5}
+            step={0.5}
+            className="w-full [&_[role=slider]]:bg-purple-600 [&_[role=slider]]:border-purple-600"
+          />
+        </CardContent>
+      </Card>
+
+      {/* Facilities */}
+      <Card className="border-0 shadow-sm bg-gradient-to-br from-blue-50 to-white">
+        <CardContent className="p-4 space-y-4">
+          <div className="flex items-center gap-2">
+            <Zap className="h-4 w-4 text-blue-600" />
+            <Label className="text-sm font-semibold text-gray-900">
+              Required Facilities
+            </Label>
+          </div>
+          <div className="space-y-3 max-h-64 overflow-y-auto custom-scrollbar">
+            {allFacilities.map((facility) => (
+              <div
+                key={facility}
+                className="flex items-center space-x-3 p-2 rounded-lg hover:bg-blue-50/50 transition-colors"
+              >
+                <Checkbox
+                  id={facility}
+                  checked={filters.facilities.includes(facility)}
+                  onCheckedChange={() => toggleFacility(facility)}
+                  className="border-blue-300 data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600"
+                />
+                <Label
+                  htmlFor={facility}
+                  className="text-sm font-medium cursor-pointer flex-1"
+                >
+                  {facility}
+                </Label>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Clear Filters */}
       {activeFiltersCount > 0 && (
-        <Button variant="outline" onClick={clearAllFilters} className="w-full">
+        <Button
+          variant="outline"
+          onClick={clearAllFilters}
+          className="w-full h-12 border-2 border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300 font-semibold"
+        >
           <X className="h-4 w-4 mr-2" />
           Clear All Filters ({activeFiltersCount})
         </Button>
@@ -322,42 +396,66 @@ export default function GymsPage() {
   );
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Hero and search section */}
-      <section className="bg-gradient-to-r from-gray-900 to-gray-600 text-white py-8 sm:py-12 lg:py-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-2xl sm:text-4xl md:text-5xl lg:text-6xl font-bold mb-4">
-            Find Your Perfect Gym
-          </h2>
-          <p className="text-base sm:text-lg lg:text-xl mb-6 sm:mb-8 opacity-90 max-w-2xl mx-auto">
-            Discover gyms near you with the best facilities and pricing
-          </p>
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-blue-50">
+      {/* Hero Section */}
+      <section className="relative overflow-hidden bg-gradient-to-br from-black via-gray-800 to-gray-600">
+        {/* Background Pattern */}
+        {/* <div className="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg width="60\" height="60" viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg"%3E%3Cg fill="none" fillRule="evenodd"%3E%3Cg fill="%23ffffff" fillOpacity="0.05"%3E%3Ccircle cx="30" cy="30" r="2"/%3E%3C/g%3E%3C/g%3E%3C/svg%3E')] opacity-20">
+        </div> */}
 
-          {/* Search Bar */}
-          <div className="max-w-4xl mx-auto">
-            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
-              <div className="relative flex-1">
-                <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 sm:w-5 sm:h-5" />
-                <Input
-                  placeholder="Enter your location"
-                  className="pl-9 sm:pl-10 h-10 sm:h-12 text-gray-900 text-sm sm:text-base"
-                />
-              </div>
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 sm:w-5 sm:h-5" />
-                <Input
-                  placeholder="Search gyms..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-9 sm:pl-10 h-10 sm:h-12 text-gray-900 text-sm sm:text-base"
-                />
-              </div>
-              <Button
-                size="lg"
-                className="h-10 sm:h-12 px-6 sm:px-8 bg-white text-blue-600 hover:bg-gray-100 text-sm sm:text-base"
-              >
-                Search
-              </Button>
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16 lg:py-24">
+          <div className="text-center">
+            <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm border border-white/20 rounded-full px-4 py-2 mb-6">
+              <Zap className="h-4 w-4 text-yellow-400" />
+              <span className="text-sm font-medium text-white">
+                Find Your Perfect Fitness Match
+              </span>
+            </div>
+
+            <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold mb-6 bg-gradient-to-r from-white via-blue-100 to-indigo-200 bg-clip-text text-transparent">
+              Discover Amazing
+              <br />
+              <span className="bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
+                Gyms Near You
+              </span>
+            </h1>
+
+            <p className="text-lg sm:text-xl lg:text-2xl mb-8 text-blue-100 max-w-3xl mx-auto leading-relaxed">
+              Transform your fitness journey with premium gyms, expert trainers,
+              and state-of-the-art facilities
+            </p>
+
+            {/* Enhanced Search Bar */}
+            <div className="max-w-4xl mx-auto">
+              <Card className="border-0 shadow-2xl bg-white/95 backdrop-blur-sm">
+                <CardContent className="p-6">
+                  <div className="flex flex-col sm:flex-row gap-4">
+                    <div className="relative flex-1">
+                      <MapPin className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                      <Input
+                        placeholder="Enter your location"
+                        className="pl-12 h-14 text-lg border-gray-200 focus:border-blue-500 focus:ring-blue-500/20 bg-white"
+                      />
+                    </div>
+                    <div className="relative flex-1">
+                      <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                      <Input
+                        placeholder="Search gyms, trainers, classes..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="pl-12 h-14 text-lg border-gray-200 focus:border-blue-500 focus:ring-blue-500/20 bg-white"
+                      />
+                    </div>
+                    <Button
+                      size="lg"
+                      className="h-14 px-8 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-200 w-full sm:w-auto"
+                    >
+                      <Search className="h-5 w-5 mr-2" />
+                      Search
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
             </div>
           </div>
         </div>
@@ -365,146 +463,205 @@ export default function GymsPage() {
 
       <div className="flex flex-col lg:flex-row">
         {/* Desktop Filter Sidebar */}
-        <div className="hidden lg:block w-80 bg-white border-r border-gray-200 p-6 overflow-y-auto max-h-screen sticky top-0">
-          <FilterPanel />
+        <div className="hidden lg:block w-96 bg-white/80 backdrop-blur-sm border-r border-gray-200 p-6 overflow-y-auto max-h-screen sticky top-0">
+          <FilterContent />
         </div>
 
         {/* Main Content */}
-        <div className="flex-1 p-4 sm:p-6">
-          {/* Mobile Filter Button and Sort */}
-          <div className="lg:hidden mb-4 sm:mb-6 flex flex-col sm:flex-row gap-3 sm:gap-4 sm:items-center sm:justify-between">
+        <div className="flex-1 p-4 sm:p-6 lg:p-8">
+          {/* Mobile Filter Controls */}
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8 lg:hidden">
             <div className="flex items-center gap-3">
-              <Sheet
-                open={isMobileFiltersOpen}
-                onOpenChange={setIsMobileFiltersOpen}
-              >
+              <Sheet open={isFilterOpen} onOpenChange={setIsFilterOpen}>
                 <SheetTrigger asChild>
                   <Button
                     variant="outline"
-                    size="sm"
-                    className="flex items-center gap-2"
+                    className="flex items-center gap-2 h-12 px-6 border-2 hover:border-blue-300 hover:bg-blue-50"
                   >
-                    <Filter className="h-4 w-4 px-2" />
-                    Filters
+                    <SlidersHorizontal className="h-4 w-4" />
+                    <span className="font-semibold">Filters</span>
                     {activeFiltersCount > 0 && (
-                      <Badge
-                        variant="secondary"
-                        className="ml-1 px-1.5 py-0.5 text-xs"
-                      >
+                      <Badge className="ml-1 bg-blue-600 hover:bg-blue-700">
                         {activeFiltersCount}
                       </Badge>
                     )}
                   </Button>
                 </SheetTrigger>
-                <SheetContent side="left" className="w-80 sm:w-96">
-                  <SheetHeader>
-                    <SheetTitle>Filters</SheetTitle>
+                <SheetContent
+                  side="left"
+                  className="w-96 overflow-y-auto bg-white"
+                >
+                  <SheetHeader className="pb-6">
+                    <SheetTitle className="text-xl font-bold">
+                      Filter Gyms
+                    </SheetTitle>
+                    <SheetDescription className="text-gray-600">
+                      Refine your search to find the perfect gym for your
+                      fitness journey.
+                    </SheetDescription>
                   </SheetHeader>
-                  <div className="mt-6 overflow-y-auto max-h-[calc(100vh-120px)]">
-                    <FilterPanel />
-                  </div>
+                  <FilterContent />
                 </SheetContent>
               </Sheet>
 
               {/* Mobile Sort */}
-              <div className="flex items-center gap-2">
-                <Label className="text-sm font-medium whitespace-nowrap">
-                  Sort:
-                </Label>
-                <Select value={sortBy} onValueChange={setSortBy}>
-                  <SelectTrigger className="w-32">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="distance">Distance</SelectItem>
-                    <SelectItem value="rating">Rating</SelectItem>
-                    <SelectItem value="price">Price</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+              <Card className="border-gray-200">
+                <CardContent className="p-3">
+                  <div className="flex items-center gap-3">
+                    <Label className="text-sm font-semibold whitespace-nowrap">
+                      Sort:
+                    </Label>
+                    <Select value={sortBy} onValueChange={setSortBy}>
+                      <SelectTrigger className="w-36 border-0 focus:ring-0">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="distance">📍 Distance</SelectItem>
+                        <SelectItem value="rating">⭐ Rating</SelectItem>
+                        <SelectItem value="price">💰 Price</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </CardContent>
+              </Card>
             </div>
           </div>
 
           {/* Active Filters Display */}
           {activeFiltersCount > 0 && (
-            <div className="mb-4 sm:mb-6 flex flex-wrap gap-2">
-              {filters.priceRange[0] > 0 || filters.priceRange[1] < 100 ? (
-                <Badge
-                  variant="secondary"
-                  className="px-2 sm:px-3 py-1 text-xs sm:text-sm"
-                >
-                  Price: ${filters.priceRange[0]} - ${filters.priceRange[1]}
-                </Badge>
-              ) : null}
-              {filters.minRating > 0 && (
-                <Badge
-                  variant="secondary"
-                  className="px-2 sm:px-3 py-1 text-xs sm:text-sm"
-                >
-                  Rating: {filters.minRating}+ stars
-                </Badge>
-              )}
-              {filters.maxDistance < 10 && (
-                <Badge
-                  variant="secondary"
-                  className="px-2 sm:px-3 py-1 text-xs sm:text-sm"
-                >
-                  Distance: ≤ {filters.maxDistance} km
-                </Badge>
-              )}
-              {filters.facilities.map((facility) => (
-                <Badge
-                  key={facility}
-                  variant="secondary"
-                  className="px-2 sm:px-3 py-1 text-xs sm:text-sm"
-                >
-                  {facility}
-                </Badge>
-              ))}
-            </div>
+            <Card className="mb-8 border-blue-200 bg-blue-50/50">
+              <CardContent className="p-4">
+                <div className="flex flex-wrap gap-2">
+                  <Badge
+                    variant="secondary"
+                    className="bg-blue-100 text-blue-800 border-blue-200 px-3 py-1"
+                  >
+                    <Filter className="h-3 w-3 mr-1" />
+                    {activeFiltersCount} Active Filter
+                    {activeFiltersCount !== 1 ? "s" : ""}
+                  </Badge>
+                  {filters.priceRange[0] > 0 || filters.priceRange[1] < 100 ? (
+                    <Badge className="bg-green-600 hover:bg-green-700">
+                      💰 ${filters.priceRange[0]} - ${filters.priceRange[1]}
+                    </Badge>
+                  ) : null}
+                  {filters.minRating > 0 && (
+                    <Badge className="bg-yellow-600 hover:bg-yellow-700">
+                      ⭐ {filters.minRating}+ stars
+                    </Badge>
+                  )}
+                  {filters.maxDistance < 10 && (
+                    <Badge className="bg-purple-600 hover:bg-purple-700">
+                      📍 ≤ {filters.maxDistance} km
+                    </Badge>
+                  )}
+                  {filters.facilities.map((facility) => (
+                    <Badge
+                      key={facility}
+                      className="bg-blue-600 hover:bg-blue-700"
+                    >
+                      {facility}
+                    </Badge>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
           )}
 
-          {/* Results Count */}
-          <div className="mb-4 sm:mb-6">
-            <p className="text-gray-600 text-sm sm:text-base">
-              Found {sortedGyms.length} gym{sortedGyms.length !== 1 ? "s" : ""}{" "}
-              near you
-              {activeFiltersCount > 0 && (
-                <span className="ml-2 text-xs sm:text-sm">
-                  ({activeFiltersCount} filter
-                  {activeFiltersCount !== 1 ? "s" : ""} applied)
-                </span>
-              )}
-            </p>
+          {/* Results Header */}
+          <div className="mb-8">
+            <Card className="border-0 shadow-sm bg-gradient-to-r from-white to-gray-50">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h2 className="text-2xl font-bold text-gray-900 mb-1">
+                      {sortedGyms.length} Gym
+                      {sortedGyms.length !== 1 ? "s" : ""} Found
+                    </h2>
+                    <p className="text-gray-600">
+                      Discover the best fitness centers in your area
+                      {activeFiltersCount > 0 && (
+                        <span className="ml-2 text-sm font-medium text-blue-600">
+                          • {activeFiltersCount} filter
+                          {activeFiltersCount !== 1 ? "s" : ""} applied
+                        </span>
+                      )}
+                    </p>
+                  </div>
+                  <div className="hidden sm:flex items-center gap-2 text-sm text-gray-500">
+                    <TrendingUp className="h-4 w-4" />
+                    Sorted by {sortBy}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           </div>
 
-          {/* Gym Cards */}
-          <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 sm:gap-6 lg:gap-8">
+          {/* Gym Cards Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-2 2xl:grid-cols-2 gap-6 lg:gap-8">
             {sortedGyms.map((gym) => (
-              <GymCard gym={gym} key={gym.id} />
+              <div
+                key={gym.id}
+                className="transform hover:scale-[1.02] transition-transform duration-200"
+              >
+                <GymCard gym={gym} />
+              </div>
             ))}
           </div>
 
-          {/* No Gym Found */}
+          {/* No Results */}
           {sortedGyms.length === 0 && (
-            <div className="text-center py-8 sm:py-12">
-              <p className="text-gray-600 text-base sm:text-lg mb-4">
-                No gyms found matching your search criteria.
-              </p>
-              <div className="flex flex-col sm:flex-row gap-3 sm:gap-2 items-center justify-center">
-                <Button variant="outline" onClick={() => setSearchTerm("")}>
-                  Clear Search
-                </Button>
-                {activeFiltersCount > 0 && (
-                  <Button variant="outline" onClick={clearAllFilters}>
-                    Clear Filters
+            <Card className="border-0 shadow-lg bg-gradient-to-br from-gray-50 to-white">
+              <CardContent className="p-12 text-center">
+                <div className="w-20 h-20 bg-gradient-to-br from-gray-200 to-gray-300 rounded-full flex items-center justify-center mx-auto mb-6">
+                  <Search className="h-8 w-8 text-gray-500" />
+                </div>
+                <h3 className="text-2xl font-bold text-gray-900 mb-4">
+                  No gyms found
+                </h3>
+                <p className="text-gray-600 mb-8 max-w-md mx-auto">
+                  We couldn&apos;t find any gyms matching your search criteria.
+                  Try adjusting your filters or search terms.
+                </p>
+                <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                  <Button
+                    variant="outline"
+                    onClick={() => setSearchTerm("")}
+                    className="h-12 px-6 border-2 hover:border-blue-300"
+                  >
+                    Clear Search
                   </Button>
-                )}
-              </div>
-            </div>
+                  {activeFiltersCount > 0 && (
+                    <Button
+                      onClick={clearAllFilters}
+                      className="h-12 px-6 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+                    >
+                      Clear All Filters
+                    </Button>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
           )}
         </div>
       </div>
+
+      <style jsx global>{`
+        .custom-scrollbar::-webkit-scrollbar {
+          width: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+          background: #f1f5f9;
+          border-radius: 3px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+          background: #cbd5e1;
+          border-radius: 3px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+          background: #94a3b8;
+        }
+      `}</style>
     </div>
   );
 }

@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 
 function Hero() {
   return (
-    <section className="relative bg-gradient-to-r from-gray-900 to-gray-600 text-white">
+    <section className="relative bg-gradient-to-r bg-black text-white">
       <div className="absolute inset-0 bg-black/30"></div>
       <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24">
         <div className="text-center">

@@ -27,6 +27,7 @@ interface GymData {
   longitude: number | null;
   nearBy: string;
   locationLink: string;
+  logoUrl: string; // Optional field for logo URL
 }
 
 function Basic() {
@@ -40,8 +41,11 @@ function Basic() {
     longitude: null,
     nearBy: "",
     locationLink: "",
+    logoUrl: "", // Initialize with an empty string
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+
   const router = useRouter();
 
   const validate = () => {
@@ -61,21 +65,53 @@ function Basic() {
     const validation = validate();
     if (validation) {
       toast.error("Error", {
-        description: validate,
+        description: validation,
       });
       return;
     }
     try {
       setIsSubmitting(true);
+      if (!selectedFile) {
+        toast.error("Select Image First");
+        return;
+      }
+      const res1 = await axios.post(
+        `${process.env.NEXT_PUBLIC_BASEURL}/gym/add/logo`,
+        { image: selectedFile },
+        {
+          withCredentials: true,
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        }
+      );
+      console.log("File uploaded successfully:", res1.data);
+      // Set the logoUrl in gymData to the uploaded image URL and send it to backend
+      const gymDataWithLogo = { ...gymData, logoUrl: res1.data.data.url };
+      setGymData(gymDataWithLogo);
       const res = await axios.post(
         `${process.env.NEXT_PUBLIC_BASEURL}/gym/addgym`,
-        gymData
+        gymDataWithLogo,
+        { withCredentials: true }
       );
       router.push(`/admin/gyms/${res.data.data.id}`);
-    } catch (error) {
-      console.error(error);
+    } catch (error: unknown) {
+      if (axios.isAxiosError(error) && error.response) {
+        // Show exactly the backend's message
+        toast.error(error.response.data.message);
+      } else {
+        // Fallback for network/CORS/unexpected errors
+        toast.error("An unexpected error occurred");
+      }
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      setSelectedFile(file);
     }
   };
 
@@ -97,7 +133,7 @@ function Basic() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="space-y-2">
               <Label htmlFor="name">Gym Name *</Label>
               <Input
@@ -119,6 +155,16 @@ function Basic() {
                   setGymData({ ...gymData, email: e.target.value })
                 }
                 placeholder="gym@example.com"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="image">Gym Logo</Label>
+              <Input
+                id="picture"
+                type="file"
+                accept="image/*"
+                onChange={handleFileSelect}
+                className="cursor-pointer"
               />
             </div>
           </div>
@@ -239,7 +285,6 @@ function Basic() {
           </div>
         </CardContent>
       </Card>
-      {/* <Toaster richColors /> */}
     </div>
   );
 }

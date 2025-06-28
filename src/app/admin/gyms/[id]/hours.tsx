@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Clock, Check, Loader2, AlertCircle } from "lucide-react";
 import axios from "axios";
 import { toast } from "sonner";
-
+import { Loader } from "lucide-react";
 interface DayHours {
   id: string;
   openTime: string;
@@ -55,6 +55,7 @@ export default function Component({ id }: { id: string }) {
     Saturday: { id: "day_6", openTime: "06:00", closeTime: "22:00" },
     Sunday: { id: "day_7", openTime: "06:00", closeTime: "22:00" },
   });
+  const [isLoading, setIsLoading] = useState<boolean>(true);
 
   const [currentHours, setCurrentHours] =
     useState<OperatingHours>(originalHours);
@@ -104,9 +105,10 @@ export default function Component({ id }: { id: string }) {
         `${process.env.NEXT_PUBLIC_BASEURL}/gym-time/modify/${dayData.id}`,
         {
           day,
-          openTime: dayData.openTime,
-          closeTime: dayData.closeTime,
-        }
+          openAt: dayData.openTime,
+          closeAt: dayData.closeTime,
+        },
+        { withCredentials: true }
       );
 
       setOriginalHours((prev) => ({
@@ -123,9 +125,14 @@ export default function Component({ id }: { id: string }) {
           return newSet;
         });
       }, 2000);
-    } catch (error) {
-      console.error(`Failed to update ${day}:`, error);
-      setErrorDays((prev) => new Set([...prev, day]));
+    } catch (error: unknown) {
+      if (axios.isAxiosError(error) && error.response) {
+        // Show exactly the backend's message
+        toast.error(error.response.data.message);
+      } else {
+        // Fallback for network/CORS/unexpected errors
+        toast.error("An unexpected error occurred");
+      }
     } finally {
       setLoadingDays((prev) => {
         const newSet = new Set(prev);
@@ -150,6 +157,7 @@ export default function Component({ id }: { id: string }) {
 
   useEffect(() => {
     const fetch = async () => {
+      setIsLoading(true);
       try {
         const res = await axios.get(
           `${process.env.NEXT_PUBLIC_BASEURL}/gym-time/${id}`
@@ -158,14 +166,28 @@ export default function Component({ id }: { id: string }) {
         const temp = convertToOperatingHours(res.data.data);
         setOriginalHours(temp);
         setCurrentHours(temp);
-        console.log("Operating hours fetched:", temp);
-      } catch (error) {
-        console.error(`Failed to fetch hours for ${id}:`, error);
-        toast.error("Failed to fetch operating hours. Please try again later.");
+      } catch (error: unknown) {
+        if (axios.isAxiosError(error) && error.response) {
+          // Show exactly the backend's message
+          toast.error(error.response.data.message);
+        } else {
+          // Fallback for network/CORS/unexpected errors
+          toast.error("An unexpected error occurred");
+        }
+      } finally {
+        setIsLoading(false);
       }
     };
     fetch();
   }, [id]);
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <Loader className="h-8 w-8 animate-spin text-blue-600" />
+      </div>
+    );
+  }
 
   return (
     <Card className="w-full max-w-4xl mx-auto">

@@ -16,6 +16,7 @@ export interface GYM {
     Plans: Plan[];
     GymOperatingHours: GymOperatingHours[];
     distance: number;
+    image?: string
 
 }
 
@@ -31,7 +32,9 @@ export interface Plan {
     type: "MONTHLY" | "YEARLY" | "QUARTERLY" | "TRIAL" | "HALF_YEARLY";
     newprice: number;
     oldprice: number;
-    features: string[];
+    featured: string[];
+    gymId: string;
+    isActive: boolean;
 }
 
 export interface GymOperatingHours {

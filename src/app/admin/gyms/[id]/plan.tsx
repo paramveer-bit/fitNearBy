@@ -9,7 +9,8 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 
-import { Plus, Badge, Check } from "lucide-react";
+import { Plus, Check } from "lucide-react";
+
 import { useState } from "react";
 import { toast } from "sonner";
 import axios from "axios";
@@ -32,7 +33,7 @@ import {
 import { X } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 
-type PlanType = "TRIAL" | "MONTHLY" | "QUARTERLY" | "YEARLY";
+type PlanType = "TRIAL" | "MONTHLY" | "QUARTERLY" | "YEARLY" | "HALF_YEARLY";
 
 interface PlanFormData {
   name: string;
@@ -42,31 +43,13 @@ interface PlanFormData {
   featured: string[];
   gymId: string;
 }
-interface Plan {
-  id: string;
-  name: string;
-  oldprice: number;
-  newprice: number;
-  type: PlanType | "";
-  featured: string[];
-  gymId: string;
-  isActive: boolean;
-}
+import { Plan } from "@/types";
 
-// const plans: Plan[] = [
-//   {
-//     id: "1",
-//     name: "Basic Plan",
-//     price: 29.99,
-//     type: "Monthly",
-//     duration: 1,
-//     description: "Access to basic gym facilities.",
-//     isActive: true,
-//   },
-// ];
+import { Loader } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 
 const PlanType: PlanType[] = ["TRIAL", "MONTHLY", "QUARTERLY", "YEARLY"];
-function Plan({ id }: { id: string }) {
+function Plans({ id }: { id: string }) {
   const [open, setOpen] = useState(false);
   const [plans, setPlans] = useState<Plan[]>([]);
   const [newFeature, setNewFeature] = useState("");
@@ -78,8 +61,13 @@ function Plan({ id }: { id: string }) {
     featured: [],
     gymId: "",
   });
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleInputChange = (field: keyof PlanFormData, value: any) => {
+  const handleInputChange = <K extends keyof PlanFormData>(
+    field: K,
+    value: PlanFormData[K]
+  ) => {
     setFormData((prev) => ({
       ...prev,
       [field]: value,
@@ -117,23 +105,32 @@ function Plan({ id }: { id: string }) {
 
   const handleSave = async () => {
     try {
+      setIsSubmitting(true);
       const res = await axios.post(
         `${process.env.NEXT_PUBLIC_BASEURL}/plans/${id}`,
-        formData
+        formData,
+        { withCredentials: true }
       );
-      console.log("Plan created successfully:", res.data);
       setPlans((prev) => [...prev, res.data.data]);
       handleCancel();
-    } catch (error) {
-      toast.error("Failed to create plan. Please try again.");
-      console.error("Error creating plan:", error);
+    } catch (error: unknown) {
+      if (axios.isAxiosError(error) && error.response) {
+        // Show exactly the backend's message
+        toast.error(error.response.data.message);
+      } else {
+        // Fallback for network/CORS/unexpected errors
+        toast.error("An unexpected error occurred");
+      }
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   const handelToggle = async (planId: string, isActive: boolean) => {
     try {
       await axios.get(
-        `${process.env.NEXT_PUBLIC_BASEURL}/plans/toggle/${planId}`
+        `${process.env.NEXT_PUBLIC_BASEURL}/plans/toggle/${planId}`,
+        { withCredentials: true }
       );
       toast.success(`Plan turned ${!isActive ? "on" : "off"}`);
       setPlans((prev) =>
@@ -141,27 +138,48 @@ function Plan({ id }: { id: string }) {
           plan.id === planId ? { ...plan, isActive: !isActive } : plan
         )
       );
-    } catch (error) {
-      console.error(error);
-      toast.error(`Error in turning ${!isActive ? "on" : "off"}`);
+    } catch (error: unknown) {
+      if (axios.isAxiosError(error) && error.response) {
+        // Show exactly the backend's message
+        toast.error(error.response.data.message);
+      } else {
+        // Fallback for network/CORS/unexpected errors
+        toast.error("An unexpected error occurred");
+      }
     }
   };
 
   useEffect(() => {
     const fetch = async () => {
+      setIsLoading(true);
       try {
         const res = await axios.get(
-          `${process.env.NEXT_PUBLIC_BASEURL}/plans/${id}`
+          `${process.env.NEXT_PUBLIC_BASEURL}/plans/${id}`,
+          { withCredentials: true }
         );
         setPlans(res.data.data);
-        console.log("Fetched plans:", res.data.data);
       } catch (error) {
-        console.error("Error fetching plans:", error);
-        toast.error("Failed to load plans.");
+        if (axios.isAxiosError(error) && error.response) {
+          // Show exactly the backend's message
+          toast.error(error.response.data.message);
+        } else {
+          // Fallback for network/CORS/unexpected errors
+          toast.error("An unexpected error occurred");
+        }
+      } finally {
+        setIsLoading(false);
       }
     };
     fetch();
   }, [id]);
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <Loader className="animate-spin h-8 w-8 text-primary" />
+      </div>
+    );
+  }
 
   return (
     <>
@@ -294,7 +312,9 @@ function Plan({ id }: { id: string }) {
               <Label htmlFor="type">Plan Type</Label>
               <Select
                 value={formData.type}
-                onValueChange={(value) => handleInputChange("type", value)}
+                onValueChange={(value) =>
+                  handleInputChange("type", value as PlanType)
+                }
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Select plan type" />
@@ -327,7 +347,7 @@ function Plan({ id }: { id: string }) {
                 {formData.featured.map((feature, index) => (
                   <Badge
                     key={index}
-                    // variant="secondary"
+                    variant="secondary"
                     className="flex items-center gap-1"
                   >
                     {feature}
@@ -341,7 +361,11 @@ function Plan({ id }: { id: string }) {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={handleCancel}>
+            <Button
+              variant="outline"
+              onClick={handleCancel}
+              disabled={isSubmitting}
+            >
               Cancel
             </Button>
             <Button onClick={handleSave}>Save</Button>
@@ -352,4 +376,4 @@ function Plan({ id }: { id: string }) {
   );
 }
 
-export default Plan;
+export default Plans;

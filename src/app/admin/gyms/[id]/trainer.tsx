@@ -8,7 +8,7 @@ import {
   CardContent,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Plus, X } from "lucide-react";
+import { Award, Plus, Users, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
@@ -22,18 +22,8 @@ import {
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import axios from "axios";
-import TrainerCard from "@/components/gyms/trainerCard";
-
-interface Trainer {
-  id: string;
-  name: string;
-  email: string;
-  bio: string;
-  profileUrl: string;
-  specialties: string[];
-  experience: number | null;
-  trained: number;
-}
+import { Trainer } from "@/types"; // Assuming Trainer type is defined in types.ts
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 interface TrainerFormData {
   name: string;
@@ -44,8 +34,9 @@ interface TrainerFormData {
   experience: number;
   trained: number;
 }
+import { Loader } from "lucide-react";
 
-function Trainer({ id }: { id: string }) {
+function TrainerPage({ id }: { id: string }) {
   const [open, setOpen] = useState(false);
   const [formData, setFormData] = useState<TrainerFormData>({
     name: "",
@@ -60,8 +51,12 @@ function Trainer({ id }: { id: string }) {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [trainers, setTrainers] = useState<Trainer[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const handleInputChange = (field: keyof TrainerFormData, value: any) => {
+  const handleInputChange = <K extends keyof TrainerFormData>(
+    field: K,
+    value: TrainerFormData[K]
+  ) => {
     setFormData((prev) => ({
       ...prev,
       [field]: value,
@@ -109,7 +104,7 @@ function Trainer({ id }: { id: string }) {
     }
   };
 
-  const handelSubmit = async () => {
+  const handleSubmit = async () => {
     try {
       setSubmitting(true);
       if (!selectedFile) {
@@ -120,15 +115,21 @@ function Trainer({ id }: { id: string }) {
         `${process.env.NEXT_PUBLIC_BASEURL}/trainers/upload`,
         { image: selectedFile },
         {
+          withCredentials: true,
           headers: {
             "Content-Type": "multipart/form-data",
           },
         }
       );
       handleInputChange("profileUrl", res.data.data.url);
-    } catch (error) {
-      console.error("Error uploading image:", error);
-      toast.error("Error in uploading the image");
+    } catch (error: unknown) {
+      if (axios.isAxiosError(error) && error.response) {
+        // Show exactly the backend's message
+        toast.error(error.response.data.message);
+      } else {
+        // Fallback for network/CORS/unexpected errors
+        toast.error("An unexpected error occurred");
+      }
       setSubmitting(false);
       return;
     }
@@ -136,7 +137,8 @@ function Trainer({ id }: { id: string }) {
     try {
       const res = await axios.post(
         `${process.env.NEXT_PUBLIC_BASEURL}/trainers/add/${id}`,
-        formData
+        formData,
+        { withCredentials: true }
       );
       console.log(res.data);
       handleCancel();
@@ -148,21 +150,56 @@ function Trainer({ id }: { id: string }) {
     }
   };
 
+  const handelDelete = async (trainerId: string) => {
+    try {
+      await axios.delete(
+        `${process.env.NEXT_PUBLIC_BASEURL}/trainers/delete/${trainerId}`,
+        { withCredentials: true }
+      );
+      setTrainers((prev) => prev.filter((t) => t.id !== trainerId));
+      toast.success("Trainer deleted successfully");
+    } catch (error: unknown) {
+      if (axios.isAxiosError(error) && error.response) {
+        // Show exactly the backend's message
+        toast.error(error.response.data.message);
+      } else {
+        // Fallback for network/CORS/unexpected errors
+        toast.error("An unexpected error occurred");
+      }
+    }
+  };
+
   useEffect(() => {
     const fetchTrainers = async () => {
+      setIsLoading(true);
       try {
         const res = await axios.get(
           `${process.env.NEXT_PUBLIC_BASEURL}/trainers/${id}`
         );
         console.log(res.data.data);
         setTrainers(res.data.data);
-      } catch (error) {
-        console.error("Error fetching trainers:", error);
-        toast.error("Failed to fetch trainers");
+      } catch (error: unknown) {
+        if (axios.isAxiosError(error) && error.response) {
+          // Show exactly the backend's message
+          toast.error(error.response.data.message);
+        } else {
+          // Fallback for network/CORS/unexpected errors
+          toast.error("An unexpected error occurred");
+        }
+      } finally {
+        setIsLoading(false);
       }
     };
     fetchTrainers();
   }, [id]);
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader className="h-8 w-8 animate-spin text-gray-500" />
+      </div>
+    );
+  }
 
   return (
     <>
@@ -175,7 +212,18 @@ function Trainer({ id }: { id: string }) {
           <div className="grid grid-cols-2 gap-4">
             {trainers.length > 0 &&
               trainers.map((trainer) => (
-                <TrainerCard key={trainer.id} trainer={trainer} />
+                <div className="w-full relative group" key={trainer.id}>
+                  <TrainerCard key={trainer.id} trainer={trainer} />
+                  <Button
+                    onClick={() => handelDelete(trainer.id)}
+                    variant="destructive"
+                    size="icon"
+                    className="absolute top-2 right-2 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+                  >
+                    <X className="h-3 w-3" />
+                    <span className="sr-only">Delete image</span>
+                  </Button>
+                </div>
               ))}
           </div>
 
@@ -230,7 +278,7 @@ function Trainer({ id }: { id: string }) {
             <div className="grid grid-cols-2 gap-4">
               {/* Profile Image */}
               <div className="grid gap-2">
-                <Label htmlFor="oldprice">Image</Label>
+                <Label htmlFor="Image">Image</Label>
                 <Input
                   id="picture"
                   type="file"
@@ -264,7 +312,9 @@ function Trainer({ id }: { id: string }) {
               <Input
                 id="trained"
                 value={formData.trained}
-                onChange={(e) => handleInputChange("trained", e.target.value)}
+                onChange={(e) =>
+                  handleInputChange("trained", Number(e.target.value))
+                }
                 className="bg-gray-50"
                 placeholder="Client Trained"
               />
@@ -316,7 +366,7 @@ function Trainer({ id }: { id: string }) {
             <Button variant="outline" onClick={handleCancel}>
               Cancel
             </Button>
-            <Button onClick={handelSubmit} disabled={submitting}>
+            <Button onClick={handleSubmit} disabled={submitting}>
               Save
             </Button>
           </DialogFooter>
@@ -326,4 +376,48 @@ function Trainer({ id }: { id: string }) {
   );
 }
 
-export default Trainer;
+const TrainerCard = ({ trainer }: { trainer: Trainer }) => {
+  return (
+    <Card key={trainer.id}>
+      <CardHeader>
+        <div className="flex items-center space-x-4">
+          <Avatar className="h-16 w-16">
+            <AvatarImage src={trainer.profileUrl} alt={trainer.name} />
+            <AvatarFallback>
+              {trainer.name
+                .split(" ")
+                .map((n) => n[0])
+                .join("")}
+            </AvatarFallback>
+          </Avatar>
+          <div>
+            <CardTitle>{trainer.name}</CardTitle>
+            <div className="flex items-center text-sm text-gray-600 mt-1">
+              <Users className="h-4 w-4 mr-1" />
+              {!trainer.trained ? 0 : trainer.trained} clients trained
+            </div>
+            <div className="flex items-center text-sm text-gray-600">
+              <Award className="h-4 w-4 mr-1" />
+              {!trainer.experience ? 0 : trainer.experience} years experience
+            </div>
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        <p className="text-gray-600 text-sm">{trainer.bio}</p>
+        <div>
+          <h4 className="font-semibold text-sm mb-2">Specialties</h4>
+          <div className="flex flex-wrap gap-1">
+            {trainer.specialties.map((specialty, index) => (
+              <Badge key={index} variant="secondary" className="text-xs">
+                {specialty}
+              </Badge>
+            ))}
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+};
+
+export default TrainerPage;

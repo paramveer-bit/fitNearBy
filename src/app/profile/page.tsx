@@ -1,25 +1,18 @@
 "use client";
 
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { UserContext } from "@/context/userContext";
-import React, { useContext, useEffect, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import AuthDialog from "@/components/auth";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Mail, Calendar, MapPin, CreditCard, User } from "lucide-react";
+import { Mail, Calendar, MapPin } from "lucide-react";
 import ReviewCard from "@/components/profile/Review";
-import { UserProfile } from "@/types";
+import type { UserProfile } from "@/types";
 import axios from "axios";
 import { Loader } from "lucide-react";
-import NewReview from "@/components/profile/AddReview";
 import AddReview from "@/components/profile/AddReview";
 import { toast } from "sonner";
 
@@ -78,6 +71,13 @@ export default function ProfilePage() {
       toast.success("Review added successfully!");
       return true;
     } catch (error) {
+      if (axios.isAxiosError(error) && error.response) {
+        // Show exactly the backend's message
+        toast.error(error.response.data.message);
+      } else {
+        // Fallback for network/CORS/unexpected errors
+        toast.error("An unexpected error occurred");
+      }
       return false;
     }
   };
@@ -91,7 +91,14 @@ export default function ProfilePage() {
           { withCredentials: true }
         );
         setProfileData(res.data.data);
-      } catch (error) {
+      } catch (error: unknown) {
+        if (axios.isAxiosError(error) && error.response) {
+          // Show exactly the backend's message
+          toast.error(error.response.data.message);
+        } else {
+          // Fallback for network/CORS/unexpected errors
+          toast.error("An unexpected error occurred");
+        }
       } finally {
         setLoading(false);
       }
@@ -110,7 +117,15 @@ export default function ProfilePage() {
             }
           : prev
       );
-    } catch (error) {}
+    } catch (error) {
+      if (axios.isAxiosError(error) && error.response) {
+        // Show exactly the backend's message
+        toast.error(error.response.data.message);
+      } else {
+        // Fallback for network/CORS/unexpected errors
+        toast.error("An unexpected error occurred");
+      }
+    }
   };
 
   if (!user) {
@@ -151,12 +166,12 @@ export default function ProfilePage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
         {/* Header */}
         <div className="mb-8">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <Avatar className="h-20 w-20">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div className="flex items-start sm:items-center space-x-4">
+              <Avatar className="h-16 w-16 sm:h-20 sm:w-20">
                 <AvatarImage src="/placeholder.svg?height=80&width=80" />
                 <AvatarFallback className="text-xl">
                   {profileData.name
@@ -166,10 +181,10 @@ export default function ProfilePage() {
                 </AvatarFallback>
               </Avatar>
               <div>
-                <h1 className="text-3xl font-bold text-gray-900">
+                <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 ">
                   {profileData.name}
                 </h1>
-                <div className="flex items-center text-gray-600 mt-1">
+                <div className="flex items-center text-sm sm:text-base text-gray-600 mt-1">
                   <Mail className="h-4 w-4 mr-1" />
                   {profileData.email}
                   {profileData.isVerified && (
@@ -178,7 +193,7 @@ export default function ProfilePage() {
                     </Badge>
                   )}
                 </div>
-                <div className="flex items-center text-gray-600 mt-1">
+                <div className="flex items-center text-sm sm:text-base text-gray-600 mt-1">
                   <Calendar className="h-4 w-4 mr-1" />
                   Member since{" "}
                   {new Date(profileData.createdAt).toLocaleDateString()}
@@ -243,7 +258,7 @@ export default function ProfilePage() {
         </div>
 
         {/* Profile Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-8">
           <Card>
             <CardHeader className="pb-3">
               <CardTitle className="text-lg">Active Bookings</CardTitle>
@@ -282,7 +297,7 @@ export default function ProfilePage() {
 
         {/* Main Content */}
         <Tabs defaultValue="bookings" className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
+          <TabsList className="grid w-full grid-cols-2 mb-6">
             <TabsTrigger value="bookings">My Bookings</TabsTrigger>
             <TabsTrigger value="reviews">My Reviews</TabsTrigger>
           </TabsList>
@@ -292,9 +307,9 @@ export default function ProfilePage() {
               {profileData.Booking.map((booking) => (
                 <Card key={booking.id}>
                   <CardContent className="p-6">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-4">
-                        <Avatar className="h-12 w-12">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                      <div className="flex items-start space-x-3 sm:space-x-4">
+                        <Avatar className="h-10 w-10 sm:h-12 sm:w-12">
                           <AvatarImage src={"/placeholder.svg"} />
                           <AvatarFallback>
                             {booking.gym.name
@@ -304,7 +319,7 @@ export default function ProfilePage() {
                           </AvatarFallback>
                         </Avatar>
                         <div>
-                          <h3 className="font-semibold text-lg">
+                          <h3 className="font-semibold text-base sm:text-lg">
                             {booking.gym.name}
                           </h3>
                           <div className="flex items-center text-gray-600 text-sm">
@@ -320,7 +335,7 @@ export default function ProfilePage() {
                           </div>
                         </div>
                       </div>
-                      <div className="text-right">
+                      <div className="text-left sm:text-right">
                         <Badge className={getStatusColor(booking.status)}>
                           {booking.status}
                         </Badge>
@@ -334,12 +349,21 @@ export default function ProfilePage() {
                         </div>
                       </div>
                     </div>
-                    <div className="mt-4 flex justify-end space-x-2">
-                      <Button variant="outline" size="sm" asChild>
+                    <div className="mt-4 flex flex-col sm:flex-row sm:justify-end gap-2 sm:gap-2 sm:space-x-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="w-full sm:w-auto"
+                        asChild
+                      >
                         <a href={`/gyms/${booking.gym.id}`}>View Gym</a>
                       </Button>
                       {booking.status === "CONFIRMED" && (
-                        <Button variant="outline" size="sm">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="w-full sm:w-auto"
+                        >
                           Download Card
                         </Button>
                       )}
@@ -351,8 +375,8 @@ export default function ProfilePage() {
           </TabsContent>
 
           <TabsContent value="reviews" className="space-y-6">
-            <div className="flex justify-between items-center">
-              <h2 className="text-2xl font-bold mt-2">My Reviews</h2>
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+              <h2 className="text-xl sm:text-2xl font-bold">My Reviews</h2>
               <AddReview
                 booking={profileData.Booking}
                 reviews={profileData.Reviews}

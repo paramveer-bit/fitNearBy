@@ -12,6 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import axios from "axios";
 import { toast } from "sonner";
+import { Loader } from "lucide-react";
 
 interface GymData {
   name: string;
@@ -37,22 +38,41 @@ function Basic({ id }: { id: string }) {
     nearBy: "",
     locationLink: "",
   });
+  const [loading, setLoading] = useState(true);
 
+  // error.response.data.message
   useEffect(() => {
     const fetchData = async () => {
+      setLoading(true);
       try {
         const res = await axios.get(
           `${process.env.NEXT_PUBLIC_BASEURL}/gym/${id}`
         );
         console.log(res.data.data);
         setGymData(res.data.data);
-      } catch (error) {
-        console.error(error);
-        toast.error("Error in fetching gym details");
+      } catch (error: unknown) {
+        if (axios.isAxiosError(error) && error.response) {
+          // Show exactly the backend's message
+          toast.error(error.response.data.message);
+        } else {
+          // Fallback for network/CORS/unexpected errors
+          toast.error("An unexpected error occurred");
+        }
+      } finally {
+        setLoading(false);
       }
     };
     fetchData();
   }, [id]);
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <Loader className="animate-spin w-8 h-8 text-gray-500" />
+      </div>
+    );
+  }
+
   return (
     <Card>
       <CardHeader>
@@ -179,7 +199,7 @@ function Basic({ id }: { id: string }) {
             id="locationLink"
             value={gymData.locationLink}
             onChange={(e) =>
-              setGymData({ ...gymData, description: e.target.value })
+              setGymData({ ...gymData, locationLink: e.target.value })
             }
             placeholder="Enter Google Maps location link"
             rows={3}

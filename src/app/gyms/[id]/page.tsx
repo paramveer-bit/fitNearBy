@@ -19,13 +19,14 @@ import TrainerCard from "@/components/gyms/trainerCard";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 
-import { GYM } from "@/types";
+import type { GYM } from "@/types";
 import { UserContext } from "@/context/userContext";
-import React, { useContext } from "react";
+import { useContext } from "react";
 import AuthDialog from "@/components/auth";
 import axios from "axios";
 import { Loader } from "lucide-react";
-import { Reviews } from "@/types";
+import type { Reviews } from "@/types";
+import { toast } from "sonner";
 
 export default function GymDetailPage() {
   const params = useParams<{ id: string }>();
@@ -48,7 +49,14 @@ export default function GymDetailPage() {
         );
         console.log("Gym data:", res.data);
         setGym(res.data.data);
-      } catch (error) {
+      } catch (error: unknown) {
+        if (axios.isAxiosError(error) && error.response) {
+          // Show exactly the backend's message
+          toast.error(error.response.data.message);
+        } else {
+          // Fallback for network/CORS/unexpected errors
+          toast.error("An unexpected error occurred");
+        }
       } finally {
         setLoading(false);
       }
@@ -66,24 +74,36 @@ export default function GymDetailPage() {
           }
         );
         setReviews(res.data.data);
-      } catch (error) {}
+      } catch (error: unknown) {
+        if (axios.isAxiosError(error) && error.response) {
+          // Show exactly the backend's message
+          toast.error(error.response.data.message);
+        } else {
+          // Fallback for network/CORS/unexpected errors
+          toast.error("An unexpected error occurred");
+        }
+      }
     };
     fetch();
-  }, [gym]);
+  }, [gym, params.id]);
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
+      <div className="flex flex-col items-center justify-center min-h-screen px-4">
         <Loader className="h-8 w-8 animate-spin text-blue-600" />
-        <p className="text-gray-600 ml-4">Loading gym details...</p>
+        <p className="text-gray-600 mt-4 text-center text-sm sm:text-base">
+          Loading gym details...
+        </p>
       </div>
     );
   }
 
   if (!loading && gym == null) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <p className="text-gray-600">Gym not found</p>
+      <div className="flex items-center justify-center min-h-screen px-4">
+        <p className="text-gray-600 text-center text-sm sm:text-base">
+          Gym not found
+        </p>
       </div>
     );
   }
@@ -91,33 +111,40 @@ export default function GymDetailPage() {
   if (gym) {
     return (
       <div className="min-h-screen bg-gray-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
+          {/* Image Gallery - Mobile Only */}
+          <div className="mb-4 sm:hidden">
+            <GymImages gymId={params.id} />
+          </div>
+
           {/* Header */}
-          <div className="mb-8">
-            <div className="flex items-start justify-between mb-4">
-              <div className="flex items-center space-x-4">
+          <div className="mb-6 sm:mb-8">
+            <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-4">
+              <div className="flex flex-col sm:flex-row sm:items-center space-y-4 sm:space-y-0 sm:space-x-4">
                 {/* Logo */}
                 <Image
-                  src={gym.logoUrl}
+                  src={gym.logoUrl || "/placeholder.svg"}
                   alt={`${gym.name} logo`}
-                  width={90}
-                  height={90}
-                  className="rounded-lg"
+                  width={70}
+                  height={70}
+                  className="rounded-lg sm:w-[90px] sm:h-[90px] self-start hidden sm:block"
                 />
-                <div>
+                <div className="flex-1">
                   {/* Gym Address and name*/}
-                  <h1 className="text-3xl font-bold text-gray-900">
+                  <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">
                     {gym.name}
                   </h1>
-                  <div className="flex items-center text-gray-600 mt-1">
-                    <MapPin className="h-4 w-4 mr-1" />
-                    {gym.address}
+                  <div className="flex items-start text-gray-600 mb-2">
+                    <MapPin className="h-4 w-4 mr-1 mt-0.5 flex-shrink-0" />
+                    <span className="text-sm sm:text-base">{gym.address}</span>
                   </div>
-                  <div className="flex items-center mt-2">
+                  <div className="flex items-center">
                     <div className="flex items-center">
-                      <Star className="h-5 w-5 text-yellow-400 fill-current" />
-                      <span className="ml-1 font-semibold">{gym.rating}</span>
-                      <span className="ml-1 text-gray-600">
+                      <Star className="h-4 w-4 sm:h-5 sm:w-5 text-yellow-400 fill-current" />
+                      <span className="ml-1 font-semibold text-sm sm:text-base">
+                        {gym.rating}
+                      </span>
+                      <span className="ml-1 text-gray-600 text-sm sm:text-base">
                         ({gym._count.Reviews} reviews)
                       </span>
                     </div>
@@ -125,32 +152,39 @@ export default function GymDetailPage() {
                 </div>
               </div>
               {/* Book Now */}
-              {user.user ? (
-                <Link href={`/book/${gym.id}`}>
-                  <Button size="lg" className="bg-blue-600 hover:bg-blue-700">
+              <div className="w-full sm:w-auto">
+                {user.user ? (
+                  <Link href={`/book/${gym.id}`} className="block">
+                    <Button
+                      size="lg"
+                      className="bg-blue-600 hover:bg-blue-700 w-full sm:w-auto"
+                    >
+                      Book Now
+                    </Button>
+                  </Link>
+                ) : (
+                  <Button
+                    size="lg"
+                    className="bg-blue-600 hover:bg-blue-700 w-full sm:w-auto"
+                    onClick={() => setDialogOpen(true)}
+                  >
                     Book Now
                   </Button>
-                </Link>
-              ) : (
-                <Button
-                  size="lg"
-                  className="bg-blue-600 hover:bg-blue-700"
-                  onClick={() => setDialogOpen(true)}
-                >
-                  Book Now
-                </Button>
-              )}
+                )}
+              </div>
             </div>
           </div>
 
-          {/* Image Gallery */}
-          <GymImages gymId={params.id} />
+          {/* Image Gallery - Desktop */}
+          <div className="hidden sm:block">
+            <GymImages gymId={params.id} />
+          </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 lg:gap-8">
             {/* Main Content */}
             <div className="lg:col-span-2">
               <Tabs defaultValue="overview" className="w-full">
-                <TabsList className="grid w-full grid-cols-5">
+                <TabsList className="grid w-full grid-cols-5 text-xs sm:text-sm overflow-x-auto">
                   <TabsTrigger value="overview">Overview</TabsTrigger>
                   <TabsTrigger value="facilities">Facilities</TabsTrigger>
                   <TabsTrigger value="trainers">Trainers</TabsTrigger>
@@ -190,7 +224,7 @@ export default function GymDetailPage() {
                 </TabsContent>
 
                 <TabsContent value="facilities" className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     {gym.Facilities.map((facility, index) => (
                       <Card key={index}>
                         <CardHeader className="pb-3">
@@ -221,6 +255,7 @@ export default function GymDetailPage() {
                   <div className="space-y-6">
                     {reviews.map((review) => (
                       <ReviewCard
+                        id={""}
                         key={review.id}
                         review={review}
                         type={"user"}
@@ -232,7 +267,7 @@ export default function GymDetailPage() {
             </div>
 
             {/* Sidebar */}
-            <div className="space-y-6">
+            <div className="space-y-4 sm:space-y-6">
               <Card>
                 <CardHeader>
                   <CardTitle>Contact Information</CardTitle>

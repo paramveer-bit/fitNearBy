@@ -68,14 +68,15 @@ function AddReview({ booking, reviews, handleAddReview }: data) {
           Add New Review
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="w-full max-w-sm sm:max-w-[500px] px-4">
         <DialogHeader>
           <DialogTitle>Add New Review</DialogTitle>
           <DialogDescription>
-            Share your experience with a gym you've visited
+            Share your experience with a gym you&apos;ve visited
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-4">
+          {/* Gym Select */}
           <div className="space-y-2">
             <Label htmlFor="gym">Select Gym</Label>
             <Select
@@ -84,7 +85,7 @@ function AddReview({ booking, reviews, handleAddReview }: data) {
                 setNewReview((prev) => ({ ...prev, gymId: value }))
               }
             >
-              <SelectTrigger>
+              <SelectTrigger className="w-full">
                 <SelectValue placeholder="Choose a gym" />
               </SelectTrigger>
               <SelectContent>
@@ -101,9 +102,11 @@ function AddReview({ booking, reviews, handleAddReview }: data) {
               </SelectContent>
             </Select>
           </div>
+
+          {/* Rating */}
           <div className="space-y-2">
             <Label htmlFor="rating">Rating</Label>
-            <div className="flex items-center space-x-2">
+            <div className="flex flex-wrap items-center space-x-2">
               {[1, 2, 3, 4, 5].map((star) => (
                 <button
                   key={star}
@@ -114,7 +117,8 @@ function AddReview({ booking, reviews, handleAddReview }: data) {
                   className="focus:outline-none"
                 >
                   <Star
-                    className={`h-6 w-6 ${
+                    // smaller on very small screens, normal on sm+
+                    className={`h-5 w-5 sm:h-6 sm:w-6 ${
                       star <= newReview.rating
                         ? "fill-yellow-400 text-yellow-400"
                         : "text-gray-300"
@@ -127,6 +131,8 @@ function AddReview({ booking, reviews, handleAddReview }: data) {
               </span>
             </div>
           </div>
+
+          {/* Comment */}
           <div className="space-y-2">
             <Label htmlFor="comment">Review</Label>
             <Textarea
@@ -137,15 +143,23 @@ function AddReview({ booking, reviews, handleAddReview }: data) {
                 setNewReview((prev) => ({ ...prev, comment: e.target.value }))
               }
               rows={4}
+              className="w-full"
             />
           </div>
-          <div className="flex justify-end space-x-2">
-            <Button variant="outline" onClick={() => setIsAddingReview(false)}>
+
+          {/* Actions */}
+          <div className="flex flex-col sm:flex-row justify-end gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setIsAddingReview(false)}
+              className="w-full sm:w-auto"
+            >
               Cancel
             </Button>
             <Button
               onClick={handel}
               disabled={!newReview.gymId || !newReview.comment.trim()}
+              className="w-full sm:w-auto"
             >
               Add Review
             </Button>

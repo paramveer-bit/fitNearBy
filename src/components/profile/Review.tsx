@@ -13,7 +13,7 @@ function Review({
   id: string;
   review: Reviews;
   type: string;
-  handelDelete: (id: string) => void;
+  handelDelete?: (id: string) => void;
 }) {
   return (
     <Card key={review.id}>
@@ -21,11 +21,11 @@ function Review({
         <div className="flex items-start justify-between">
           <div className="flex items-center space-x-4">
             <Avatar className="h-12 w-12">
-              {/* {review.gym?.logoUrl ? (
+              {review.gym?.logoUrl ? (
                 <AvatarImage src={review.gym.logoUrl || "/placeholder.svg"} />
               ) : (
                 ""
-              )} */}
+              )}
               <AvatarFallback>
                 {type === "gym"
                   ? review.gym?.name
@@ -59,7 +59,7 @@ function Review({
               </div>
             </div>
           </div>
-          {type === "gym" && (
+          {type === "gym" && handelDelete && (
             <Button
               variant="outline"
               size="sm"

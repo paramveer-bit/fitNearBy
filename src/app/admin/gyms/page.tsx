@@ -10,22 +10,11 @@ import Link from "next/link";
 import axios from "axios";
 // Mock data - in a real app, this would come from your databas
 
-interface Gym {
-  id: string;
-  name: string;
-  location: string;
-  locationName?: string;
-  email: string;
-  description: string;
-  address: string;
-  latitude: number | null;
-  longitude: number | null;
-  nearBy: string;
-  logoUrl?: string;
-}
+import { GYM } from "@/types";
+import { toast } from "sonner";
 export default function GymsPage() {
   const [searchTerm, setSearchTerm] = useState("");
-  const [gyms, setGyms] = useState<Gym[]>([]);
+  const [gyms, setGyms] = useState<GYM[]>([]);
   const [fetching, setFetching] = useState(false);
 
   const filteredGyms = useMemo(() => {
@@ -46,8 +35,14 @@ export default function GymsPage() {
         setFetching(true);
         const res = await axios.get(`${process.env.NEXT_PUBLIC_BASEURL}/gym`);
         setGyms(res.data.data);
-      } catch (error) {
-        console.error("Error fetching gyms:", error);
+      } catch (error: unknown) {
+        if (axios.isAxiosError(error) && error.response) {
+          // Show exactly the backend's message
+          toast.error(error.response.data.message);
+        } else {
+          // Fallback for network/CORS/unexpected errors
+          toast.error("An unexpected error occurred");
+        }
       } finally {
         setFetching(false);
       }
@@ -87,7 +82,7 @@ export default function GymsPage() {
       <div className="relative mb-8">
         <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
         <Input
-          placeholder="Search gyms by name, location, facilities, or trainer specialties..."
+          placeholder="Search gyms by name"
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           className="pl-10 h-12 text-lg"
@@ -126,7 +121,7 @@ export default function GymsPage() {
                         <CardTitle className="text-xl">{gym.name}</CardTitle>
                         <div className="flex items-center gap-1 text-sm text-muted-foreground">
                           <MapPin className="h-3 w-3" />
-                          {gym.locationName || "Faridabad"}
+                          {gym.location}
                         </div>
                       </div>
                     </div>
@@ -149,13 +144,15 @@ export default function GymsPage() {
                   {/* Action Buttons */}
                   <div className="flex gap-2 pt-2">
                     <Button size="sm" className="flex-1">
-                      View Details
+                      <a href={`/admin/gyms/${gym.id}`} className="w-full">
+                        View Details
+                      </a>
                     </Button>
                     <Button
                       size="sm"
                       variant="outline"
                       onClick={() => {
-                        window.open(`${gym.location}`, "_blank");
+                        window.open(`${gym.locationLink}`, "_blank");
                       }}
                     >
                       <MapPin className="h-3 w-3 mr-1" />

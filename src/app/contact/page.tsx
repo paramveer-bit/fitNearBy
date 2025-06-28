@@ -1,7 +1,5 @@
 "use client";
 
-import type React from "react";
-
 import { useState } from "react";
 import {
   Card,
@@ -22,6 +20,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { MapPin, Phone, Mail, Clock, Send } from "lucide-react";
+import axios from "axios";
+import { toast } from "sonner";
 
 export default function ContactPage() {
   const [formData, setFormData] = useState({
@@ -31,21 +31,38 @@ export default function ContactPage() {
     message: "",
     inquiryType: "",
   });
+  const [isSending, setIsSending] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // In a real app, this would send the form data to your backend
-    console.log("Form submitted:", formData);
-    // Show success message
-    alert("Thank you for your message! We'll get back to you soon.");
-    // Reset form
-    setFormData({
-      name: "",
-      email: "",
-      subject: "",
-      message: "",
-      inquiryType: "",
-    });
+    try {
+      setIsSending(true);
+      // In a real app, this would send the form data to your backend
+      await axios.post(
+        `${process.env.NEXT_PUBLIC_BASEURL}/inquiry/send`,
+        formData
+      );
+      // Show success message
+      alert("Thank you for your message! We'll get back to you soon.");
+      // Reset form
+      setFormData({
+        name: "",
+        email: "",
+        subject: "",
+        message: "",
+        inquiryType: "",
+      });
+    } catch (error: unknown) {
+      if (axios.isAxiosError(error) && error.response) {
+        // Show exactly the backend's message
+        toast.error(error.response.data.message);
+      } else {
+        // Fallback for network/CORS/unexpected errors
+        toast.error("An unexpected error occurred");
+      }
+    } finally {
+      setIsSending(false);
+    }
   };
 
   const handleChange = (field: string, value: string) => {
@@ -78,7 +95,7 @@ export default function ContactPage() {
                 <p className="text-gray-600 mb-2">
                   Call us for immediate assistance
                 </p>
-                <p className="font-semibold text-lg">+1 (555) 123-4567</p>
+                <p className="font-semibold text-lg">+91 9625323218</p>
                 <div className="flex items-center mt-2 text-sm text-gray-600">
                   <Clock className="h-4 w-4 mr-1" />
                   Mon-Fri: 8AM-8PM, Sat-Sun: 9AM-6PM
@@ -95,7 +112,7 @@ export default function ContactPage() {
               </CardHeader>
               <CardContent>
                 <p className="text-gray-600 mb-2">Send us an email anytime</p>
-                <p className="font-semibold">support@gymbook.com</p>
+                <p className="font-semibold">Fitnearby.as@gmail.com</p>
                 <p className="text-sm text-gray-600 mt-2">
                   We typically respond within 24 hours
                 </p>
@@ -232,7 +249,12 @@ export default function ContactPage() {
                     />
                   </div>
 
-                  <Button type="submit" size="lg" className="w-full">
+                  <Button
+                    type="submit"
+                    size="lg"
+                    className="w-full"
+                    disabled={isSending}
+                  >
                     <Send className="h-4 w-4 mr-2" />
                     Send Message
                   </Button>

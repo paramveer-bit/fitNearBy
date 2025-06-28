@@ -9,18 +9,18 @@ export default function AdminAuthWrapper({
 }: {
   children: React.ReactNode;
 }) {
-  const { user } = useContext(UserContext);
+  const { user, isLoading } = useContext(UserContext);
   const router = useRouter();
 
   useEffect(() => {
-    if (!user || !user.isVerified) {
+    if (!isLoading && (!user || !user.isVerified)) {
       router.replace("/"); // Redirect to home or login
     }
-  }, [user, router]);
+  }, [user, isLoading, router]);
 
-  // if (user === null) {
-  //   return <div>Loading...</div>;
-  // }
+  if (isLoading) {
+    return <div>Loading...</div>;
+  }
 
   if (!user || !user.isVerified) {
     return null; // Or show a spinner
@@ -28,3 +28,8 @@ export default function AdminAuthWrapper({
 
   return <>{children}</>;
 }
+// l u
+// t t
+// t fals
+// f this
+// f false

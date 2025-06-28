@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useParams } from "next/navigation";
@@ -26,100 +26,94 @@ import { Separator } from "@/components/ui/separator";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { GYM } from "@/types";
+// const gymData: GYM = {
+//   id: "1",
+//   name: "FitZone Premium",
+//   location: "123 Downtown Street, City Center",
+//   phone: "+91 98765 43210",
+//   email: "info@fitzonepremium.com",
+//   image: "/placeholder.svg?height=100&width=100",
+//   plans: [
+//     {
+//       id: 1,
+//       name: "Basic",
+//       price: 1999,
+//       originalPrice: 2499,
+//       duration: "1 Month",
+//       features: ["Gym Access", "Locker Facility", "Basic Equipment"],
+//       popular: false,
+//     },
+//     {
+//       id: 2,
+//       name: "Premium",
+//       price: 2999,
+//       originalPrice: 3999,
+//       duration: "1 Month",
+//       features: [
+//         "All Basic Features",
+//         "Swimming Pool",
+//         "Group Classes",
+//         "Sauna Access",
+//       ],
+//       popular: true,
+//     },
+//     {
+//       id: 3,
+//       name: "Elite",
+//       price: 4999,
+//       originalPrice: 6999,
+//       duration: "1 Month",
+//       features: [
+//         "All Premium Features",
+//         "Personal Training (2 sessions)",
+//         "Nutrition Consultation",
+//         "Priority Booking",
+//       ],
+//       popular: false,
+//     },
+//   ],
+// };
 
-const gymData = {
-  id: 1,
-  name: "FitZone Premium",
-  location: "123 Downtown Street, City Center",
-  phone: "+91 98765 43210",
-  email: "info@fitzonepremium.com",
-  image: "/placeholder.svg?height=100&width=100",
-  plans: [
-    {
-      id: 1,
-      name: "Basic",
-      price: 1999,
-      originalPrice: 2499,
-      duration: "1 Month",
-      features: ["Gym Access", "Locker Facility", "Basic Equipment"],
-      popular: false,
-    },
-    {
-      id: 2,
-      name: "Premium",
-      price: 2999,
-      originalPrice: 3999,
-      duration: "1 Month",
-      features: [
-        "All Basic Features",
-        "Swimming Pool",
-        "Group Classes",
-        "Sauna Access",
-      ],
-      popular: true,
-    },
-    {
-      id: 3,
-      name: "Elite",
-      price: 4999,
-      originalPrice: 6999,
-      duration: "1 Month",
-      features: [
-        "All Premium Features",
-        "Personal Training (2 sessions)",
-        "Nutrition Consultation",
-        "Priority Booking",
-      ],
-      popular: false,
-    },
-  ],
+import PlanSelector from "./PlanSelector";
+import PersonalDetails from "./PersonalDetails";
+import axios from "axios";
+
+const loadScript = (src: string) => {
+  return new Promise((resolve) => {
+    const script = document.createElement("script");
+    script.src = src;
+    script.onload = () => resolve(true);
+    script.onerror = () => resolve(false);
+    document.body.appendChild(script);
+  });
 };
 
-interface Coupon {
-  code: string;
-  discount: number;
-  type: "percentage" | "fixed";
-  description: string;
-  minAmount: number;
-  maxDiscount: number; // Optional for fixed discounts
+interface BookingData {
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string;
+  emergencyContact?: string; // <-- make optional
+  medicalConditions?: string; // <-- make optional
+  agreeToTerms: boolean;
 }
-
-const availableCoupons: Coupon[] = [
-  {
-    code: "WELCOME20",
-    discount: 20,
-    type: "percentage",
-    description: "20% off for new members",
-    minAmount: 1500,
-    maxDiscount: 1000,
-  },
-  {
-    code: "FLAT500",
-    discount: 500,
-    type: "fixed",
-    description: "Flat ₹500 off on any plan",
-    minAmount: 2000,
-    maxDiscount: 500,
-  },
-  {
-    code: "PREMIUM15",
-    discount: 15,
-    type: "percentage",
-    description: "15% off on Premium and Elite plans",
-    minAmount: 2500,
-    maxDiscount: 750,
-  },
-];
+const durationMap: Record<string, string> = {
+  MONTHLY: "1 Month",
+  YEARLY: "12 Months",
+  QUARTERLY: "3 Months",
+  TRIAL: "7 Days",
+  HALF_YEARLY: "6 Months",
+};
 
 export default function BookingPage() {
   const params = useParams();
+  // ...existing code...
+  const [gymData, setGymData] = useState<GYM>();
+  // ...existing code...
   const [currentStep, setCurrentStep] = useState(1);
-  const [selectedPlan, setSelectedPlan] = useState(2); // Default to Premium
-  const [couponCode, setCouponCode] = useState("");
-  const [appliedCoupon, setAppliedCoupon] = useState<Coupon | null>(null);
-  const [couponError, setCouponError] = useState("");
-  const [paymentMethod, setPaymentMethod] = useState("razorpay");
-  const [bookingData, setBookingData] = useState({
+  const [selectedPlan, setSelectedPlan] = useState(""); // Default to Premium
+  const [bookingData, setBookingData] = useState<BookingData>({
     firstName: "",
     lastName: "",
     email: "",
@@ -136,49 +130,6 @@ export default function BookingPage() {
     { id: 4, title: "Confirmation", description: "Booking confirmed" },
   ];
 
-  const selectedPlanData = gymData.plans.find(
-    (plan) => plan.id === selectedPlan
-  );
-  const subtotal = selectedPlanData?.price || 0;
-  const discount = appliedCoupon
-    ? appliedCoupon.type === "percentage"
-      ? Math.min(
-          (subtotal * appliedCoupon.discount) / 100,
-          appliedCoupon.maxDiscount
-        )
-      : appliedCoupon.discount
-    : 0;
-  const taxes = Math.round((subtotal - discount) * 0.18); // 18% GST
-  const total = subtotal - discount + taxes;
-
-  const applyCoupon = () => {
-    setCouponError("");
-    const coupon = availableCoupons.find(
-      (c) => c.code.toLowerCase() === couponCode.toLowerCase()
-    );
-
-    if (!coupon) {
-      setCouponError("Invalid coupon code");
-      return;
-    }
-
-    if (subtotal < coupon.minAmount) {
-      setCouponError(
-        `Minimum order amount ₹${coupon.minAmount} required for this coupon`
-      );
-      return;
-    }
-
-    setAppliedCoupon(coupon);
-    setCouponCode("");
-  };
-
-  const removeCoupon = () => {
-    setAppliedCoupon(null);
-    setCouponCode("");
-    setCouponError("");
-  };
-
   const handleNextStep = () => {
     if (currentStep < 4) {
       setCurrentStep(currentStep + 1);
@@ -191,17 +142,118 @@ export default function BookingPage() {
     }
   };
 
-  const handleBookingSubmit = () => {
-    // Here you would integrate with payment gateway
-    console.log("Processing payment...", {
-      plan: selectedPlanData,
-      user: bookingData,
-      coupon: appliedCoupon,
-      total,
-      paymentMethod,
-    });
+  // const handleBookingSubmit = () => {
+  //   // Here you would integrate with payment gateway
+  //   console.log("Processing payment...", {
+  //     plan: selectedPlanData,
+  //     user: bookingData,
+  //     coupon: appliedCoupon,
+  //     total,
+  //     paymentMethod,
+  //   });
+  //   handleNextStep();
+  // };
+
+  useEffect(() => {
+    loadScript("https://checkout.razorpay.com/v1/checkout.js");
+    const fetch = async () => {
+      try {
+        const res = await axios.get(
+          `${process.env.NEXT_PUBLIC_BASEURL}/gym/${params.gymId}`
+        );
+        setGymData(res.data.data);
+        console.log("Gym Data:", res.data.data);
+      } catch (error) {}
+    };
+    fetch();
+  }, []);
+
+  const handelSubmit = async () => {
+    if (!selectedPlan) {
+      alert("Please select a plan before proceeding.");
+      return;
+    }
+
+    if (
+      !bookingData.firstName ||
+      !bookingData.lastName ||
+      !bookingData.email ||
+      !bookingData.phone
+    ) {
+      alert("Please fill in all required fields.");
+      return;
+    }
+
+    try {
+      const res = await axios.post(
+        `${process.env.NEXT_PUBLIC_BASEURL}/booking/placeOrder`,
+        {
+          gymId: params.gymId,
+          planId: selectedPlan,
+          name: `${bookingData.firstName} ${bookingData.lastName}`,
+          email: bookingData.email,
+          phoneNumber: bookingData.phone,
+        },
+        {
+          withCredentials: true,
+        }
+      );
+      const data = res.data.data;
+      const payment = new (window as any).Razorpay({
+        key: process.env.NEXT_PUBLIC_RAZORPAY_KEY,
+        order_id: data.order.id,
+        ...data.order,
+        handler: async (response: any) => {
+          console.log("Payment Response:", response);
+          const options = {
+            razorpay_order_id: response.razorpay_order_id,
+            razorpay_payment_id: response.razorpay_payment_id,
+            razorpay_signature: response.razorpay_signature,
+            booking_id: data.booking_id,
+          };
+          // Here you would typically verify the payment signature and complete the booking
+          const res = await axios.post(
+            `${process.env.NEXT_PUBLIC_BASEURL}/booking/verifyPayment`,
+            options,
+            {
+              withCredentials: true,
+            }
+          );
+
+          if (res.data.data) {
+            alert("Payment successful! Your booking is confirmed.");
+            setCurrentStep(4); // Move to confirmation step
+          }
+        },
+      });
+      payment.open();
+    } catch (error) {
+      console.error("Error placing order:", error);
+      alert("Failed to place order. Please try again later.");
+      return;
+    }
+
+    // Here you would typically send the booking data to your backend
+    console.log("Booking Data:", bookingData);
     handleNextStep();
   };
+
+  if (!gymData) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-gray-50">
+        <Alert variant="destructive">
+          <AlertCircle className="w-6 h-6" />
+          <AlertDescription>
+            Gym data not found. Please check the gym ID.
+          </AlertDescription>
+        </Alert>
+      </div>
+    );
+  }
+
+  const selectedPlanData = gymData.Plans.find(
+    (plan) => plan.id === selectedPlan
+  );
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -270,424 +322,26 @@ export default function BookingPage() {
           <div className="lg:col-span-2">
             {/* Step 1: Plan Selection */}
             {currentStep === 1 && (
-              <Card>
-                <CardHeader>
-                  <CardTitle>Select Your Membership Plan</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    {gymData.plans.map((plan) => (
-                      <div
-                        key={plan.id}
-                        className={`relative p-6 rounded-lg border-2 cursor-pointer transition-all ${
-                          plan.popular
-                            ? "border-blue-500 bg-blue-50"
-                            : selectedPlan === plan.id
-                            ? "border-blue-300 bg-blue-25"
-                            : "border-gray-200 hover:border-gray-300"
-                        }`}
-                        onClick={() => setSelectedPlan(plan.id)}
-                      >
-                        {plan.popular && (
-                          <Badge className="absolute -top-3 left-6">
-                            Most Popular
-                          </Badge>
-                        )}
-
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center space-x-4">
-                            <div
-                              className={`w-4 h-4 rounded-full border-2 ${
-                                selectedPlan === plan.id
-                                  ? "bg-blue-600 border-blue-600"
-                                  : "border-gray-300"
-                              }`}
-                            >
-                              {selectedPlan === plan.id && (
-                                <div className="w-2 h-2 bg-white rounded-full m-0.5" />
-                              )}
-                            </div>
-                            <div>
-                              <h3 className="text-lg font-bold">{plan.name}</h3>
-                              <p className="text-sm text-gray-600">
-                                {plan.duration}
-                              </p>
-                            </div>
-                          </div>
-
-                          <div className="text-right">
-                            <div className="flex items-center space-x-2">
-                              <span className="text-2xl font-bold text-green-600">
-                                ₹{plan.price}
-                              </span>
-                              {plan.originalPrice > plan.price && (
-                                <span className="text-lg text-gray-500 line-through">
-                                  ₹{plan.originalPrice}
-                                </span>
-                              )}
-                            </div>
-                            {plan.originalPrice > plan.price && (
-                              <Badge variant="secondary" className="mt-1">
-                                Save ₹{plan.originalPrice - plan.price}
-                              </Badge>
-                            )}
-                          </div>
-                        </div>
-
-                        <ul className="mt-4 space-y-2">
-                          {plan.features.map((feature, index) => (
-                            <li
-                              key={index}
-                              className="flex items-center text-sm"
-                            >
-                              <Check className="w-4 h-4 text-green-500 mr-2" />
-                              {feature}
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    ))}
-                  </div>
-
-                  <div className="mt-6 flex justify-end">
-                    <Button onClick={handleNextStep} size="lg">
-                      Continue to Details
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
+              <PlanSelector
+                plans={gymData.Plans}
+                selectedPlan={selectedPlan}
+                setSelectedPlan={setSelectedPlan}
+                handleNextStep={handleNextStep}
+              />
             )}
 
             {/* Step 2: Personal Details */}
             {currentStep === 2 && (
-              <Card>
-                <CardHeader>
-                  <CardTitle>Personal Information</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-6">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <Label htmlFor="firstName">First Name *</Label>
-                        <Input
-                          id="firstName"
-                          value={bookingData.firstName}
-                          onChange={(e) =>
-                            setBookingData({
-                              ...bookingData,
-                              firstName: e.target.value,
-                            })
-                          }
-                          required
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="lastName">Last Name *</Label>
-                        <Input
-                          id="lastName"
-                          value={bookingData.lastName}
-                          onChange={(e) =>
-                            setBookingData({
-                              ...bookingData,
-                              lastName: e.target.value,
-                            })
-                          }
-                          required
-                        />
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <Label htmlFor="email">Email Address *</Label>
-                        <Input
-                          id="email"
-                          type="email"
-                          value={bookingData.email}
-                          onChange={(e) =>
-                            setBookingData({
-                              ...bookingData,
-                              email: e.target.value,
-                            })
-                          }
-                          required
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="phone">Phone Number *</Label>
-                        <Input
-                          id="phone"
-                          value={bookingData.phone}
-                          onChange={(e) =>
-                            setBookingData({
-                              ...bookingData,
-                              phone: e.target.value,
-                            })
-                          }
-                          required
-                        />
-                      </div>
-                    </div>
-
-                    <div>
-                      <Label htmlFor="emergencyContact">
-                        Emergency Contact
-                      </Label>
-                      <Input
-                        id="emergencyContact"
-                        value={bookingData.emergencyContact}
-                        onChange={(e) =>
-                          setBookingData({
-                            ...bookingData,
-                            emergencyContact: e.target.value,
-                          })
-                        }
-                        placeholder="Emergency contact number"
-                      />
-                    </div>
-
-                    <div>
-                      <Label htmlFor="medicalConditions">
-                        Medical Conditions (Optional)
-                      </Label>
-                      <Textarea
-                        id="medicalConditions"
-                        value={bookingData.medicalConditions}
-                        onChange={(e) =>
-                          setBookingData({
-                            ...bookingData,
-                            medicalConditions: e.target.value,
-                          })
-                        }
-                        placeholder="Any medical conditions or allergies we should know about"
-                        rows={3}
-                      />
-                    </div>
-
-                    <div className="flex items-center space-x-2">
-                      <Checkbox
-                        id="terms"
-                        checked={bookingData.agreeToTerms}
-                        onCheckedChange={(checked) =>
-                          setBookingData({
-                            ...bookingData,
-                            agreeToTerms: !!checked,
-                          })
-                        }
-                      />
-                      <Label htmlFor="terms" className="text-sm">
-                        I agree to the{" "}
-                        <Link
-                          href="/terms"
-                          className="text-blue-600 hover:underline"
-                        >
-                          Terms & Conditions
-                        </Link>{" "}
-                        and{" "}
-                        <Link
-                          href="/privacy"
-                          className="text-blue-600 hover:underline"
-                        >
-                          Privacy Policy
-                        </Link>
-                      </Label>
-                    </div>
-                  </div>
-
-                  <div className="mt-6 flex justify-between">
-                    <Button variant="outline" onClick={handlePrevStep}>
-                      Back
-                    </Button>
-                    <Button
-                      onClick={handleNextStep}
-                      disabled={
-                        !bookingData.firstName ||
-                        !bookingData.lastName ||
-                        !bookingData.email ||
-                        !bookingData.phone ||
-                        !bookingData.agreeToTerms
-                      }
-                      size="lg"
-                    >
-                      Continue to Payment
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
+              <PersonalDetails
+                bookingData={bookingData}
+                setBookingData={setBookingData}
+                handleNextStep={handleNextStep}
+                handlePrevStep={handlePrevStep}
+                handleBooking={handelSubmit}
+              />
             )}
 
             {/* Step 3: Payment */}
-            {currentStep === 3 && (
-              <div className="space-y-6">
-                {/* Coupon Section */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center">
-                      <Tag className="w-5 h-5 mr-2" />
-                      Apply Coupon Code
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    {!appliedCoupon ? (
-                      <div className="space-y-4">
-                        <div className="flex space-x-2">
-                          <Input
-                            placeholder="Enter coupon code"
-                            value={couponCode}
-                            onChange={(e) =>
-                              setCouponCode(e.target.value.toUpperCase())
-                            }
-                          />
-                          <Button onClick={applyCoupon} disabled={!couponCode}>
-                            Apply
-                          </Button>
-                        </div>
-                        {couponError && (
-                          <Alert variant="destructive">
-                            <AlertCircle className="h-4 w-4" />
-                            <AlertDescription>{couponError}</AlertDescription>
-                          </Alert>
-                        )}
-
-                        {/* Available Coupons */}
-                        <div className="mt-4">
-                          <p className="text-sm font-medium mb-2">
-                            Available Coupons:
-                          </p>
-                          <div className="space-y-2">
-                            {availableCoupons.map((coupon) => (
-                              <div
-                                key={coupon.code}
-                                className="flex items-center justify-between p-3 bg-green-50 border border-green-200 rounded-lg cursor-pointer hover:bg-green-100"
-                                onClick={() => setCouponCode(coupon.code)}
-                              >
-                                <div>
-                                  <p className="font-medium text-green-800">
-                                    {coupon.code}
-                                  </p>
-                                  <p className="text-sm text-green-600">
-                                    {coupon.description}
-                                  </p>
-                                </div>
-                                <Button variant="outline" size="sm">
-                                  Apply
-                                </Button>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      </div>
-                    ) : (
-                      <Alert>
-                        <CheckCircle className="h-4 w-4" />
-                        <AlertDescription className="flex items-center justify-between">
-                          <span>
-                            Coupon <strong>{appliedCoupon.code}</strong>{" "}
-                            applied! You saved ₹{discount}
-                          </span>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={removeCoupon}
-                          >
-                            Remove
-                          </Button>
-                        </AlertDescription>
-                      </Alert>
-                    )}
-                  </CardContent>
-                </Card>
-
-                {/* Payment Method */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center">
-                      <CreditCard className="w-5 h-5 mr-2" />
-                      Payment Method
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <RadioGroup
-                      value={paymentMethod}
-                      onValueChange={setPaymentMethod}
-                    >
-                      <div className="flex items-center space-x-2 p-4 border rounded-lg">
-                        <RadioGroupItem value="razorpay" id="razorpay" />
-                        <Label
-                          htmlFor="razorpay"
-                          className="flex items-center space-x-3 cursor-pointer"
-                        >
-                          <div className="w-8 h-8 bg-blue-600 rounded flex items-center justify-center">
-                            <span className="text-white text-xs font-bold">
-                              R
-                            </span>
-                          </div>
-                          <div>
-                            <p className="font-medium">Razorpay</p>
-                            <p className="text-sm text-gray-600">
-                              UPI, Cards, Net Banking, Wallets
-                            </p>
-                          </div>
-                        </Label>
-                      </div>
-
-                      <div className="flex items-center space-x-2 p-4 border rounded-lg">
-                        <RadioGroupItem value="stripe" id="stripe" />
-                        <Label
-                          htmlFor="stripe"
-                          className="flex items-center space-x-3 cursor-pointer"
-                        >
-                          <div className="w-8 h-8 bg-purple-600 rounded flex items-center justify-center">
-                            <span className="text-white text-xs font-bold">
-                              S
-                            </span>
-                          </div>
-                          <div>
-                            <p className="font-medium">Stripe</p>
-                            <p className="text-sm text-gray-600">
-                              Credit/Debit Cards
-                            </p>
-                          </div>
-                        </Label>
-                      </div>
-
-                      <div className="flex items-center space-x-2 p-4 border rounded-lg">
-                        <RadioGroupItem value="paytm" id="paytm" />
-                        <Label
-                          htmlFor="paytm"
-                          className="flex items-center space-x-3 cursor-pointer"
-                        >
-                          <div className="w-8 h-8 bg-blue-500 rounded flex items-center justify-center">
-                            <span className="text-white text-xs font-bold">
-                              P
-                            </span>
-                          </div>
-                          <div>
-                            <p className="font-medium">Paytm</p>
-                            <p className="text-sm text-gray-600">
-                              Paytm Wallet, UPI, Cards
-                            </p>
-                          </div>
-                        </Label>
-                      </div>
-                    </RadioGroup>
-                  </CardContent>
-                </Card>
-
-                <div className="flex justify-between">
-                  <Button variant="outline" onClick={handlePrevStep}>
-                    Back
-                  </Button>
-                  <Button
-                    onClick={handleBookingSubmit}
-                    size="lg"
-                    className="px-8"
-                  >
-                    Pay ₹{total} & Book Now
-                  </Button>
-                </div>
-              </div>
-            )}
 
             {/* Step 4: Confirmation */}
             {currentStep === 4 && (
@@ -708,12 +362,6 @@ export default function BookingPage() {
                     <h3 className="font-semibold mb-4">Booking Details</h3>
                     <div className="space-y-2 text-sm">
                       <div className="flex justify-between">
-                        <span>Booking ID:</span>
-                        <span className="font-medium">
-                          #GYM{Date.now().toString().slice(-6)}
-                        </span>
-                      </div>
-                      <div className="flex justify-between">
                         <span>Gym:</span>
                         <span className="font-medium">{gymData.name}</span>
                       </div>
@@ -725,7 +373,9 @@ export default function BookingPage() {
                       </div>
                       <div className="flex justify-between">
                         <span>Amount Paid:</span>
-                        <span className="font-medium">₹{total}</span>
+                        <span className="font-medium">
+                          ₹{selectedPlanData?.newprice}
+                        </span>
                       </div>
                     </div>
                   </div>
@@ -753,7 +403,7 @@ export default function BookingPage() {
                 {/* Gym Info */}
                 <div className="flex items-center space-x-3 mb-6">
                   <Image
-                    src={gymData.image || "/placeholder.svg"}
+                    src={"/placeholder.svg"}
                     alt={gymData.name}
                     width={60}
                     height={60}
@@ -763,7 +413,7 @@ export default function BookingPage() {
                     <h4 className="font-semibold">{gymData.name}</h4>
                     <div className="flex items-center text-sm text-gray-600">
                       <MapPin className="w-3 h-3 mr-1" />
-                      <span>Downtown</span>
+                      <span>{gymData.location}</span>
                     </div>
                   </div>
                 </div>
@@ -779,10 +429,12 @@ export default function BookingPage() {
                           {selectedPlanData.name} Plan
                         </p>
                         <p className="text-sm text-gray-600">
-                          {selectedPlanData.duration}
+                          {durationMap[selectedPlanData.type]}
                         </p>
                       </div>
-                      <p className="font-semibold">₹{selectedPlanData.price}</p>
+                      <p className="font-semibold">
+                        ₹{selectedPlanData.oldprice}
+                      </p>
                     </div>
                   </div>
                 )}
@@ -793,32 +445,32 @@ export default function BookingPage() {
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between">
                     <span>Subtotal</span>
-                    <span>₹{subtotal}</span>
+                    <span>
+                      ₹{selectedPlanData ? selectedPlanData.newprice : 0}
+                    </span>
                   </div>
-                  {appliedCoupon && (
-                    <div className="flex justify-between text-green-600">
-                      <span>Discount ({appliedCoupon.code})</span>
-                      <span>-₹{discount}</span>
-                    </div>
-                  )}
-                  <div className="flex justify-between">
-                    <span>Taxes (GST 18%)</span>
-                    <span>₹{taxes}</span>
+
+                  <div className="flex justify-between text-green-600">
+                    <span>Discount ("NEW USER")</span>
+                    <span>
+                      -₹
+                      {selectedPlanData
+                        ? selectedPlanData.oldprice - selectedPlanData.newprice
+                        : 0}
+                    </span>
                   </div>
                   <Separator />
                   <div className="flex justify-between font-semibold text-lg">
                     <span>Total</span>
-                    <span>₹{total}</span>
+                    <span>
+                      ₹{selectedPlanData ? selectedPlanData.newprice : 0}
+                    </span>
                   </div>
                 </div>
 
                 {/* Contact Info */}
                 <Separator className="my-4" />
                 <div className="space-y-2 text-sm text-gray-600">
-                  <div className="flex items-center">
-                    <Phone className="w-4 h-4 mr-2" />
-                    <span>{gymData.phone}</span>
-                  </div>
                   <div className="flex items-center">
                     <Mail className="w-4 h-4 mr-2" />
                     <span>{gymData.email}</span>

@@ -13,11 +13,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import axios from "axios";
 
-interface Facility {
-  id: string;
-  name: string;
-  description: string;
-}
+import { Facility } from "@/types";
 
 function Facilities({ id }: { id: string }) {
   const [facilities, setFacility] = useState<Facility[]>([]);
@@ -27,6 +23,7 @@ function Facilities({ id }: { id: string }) {
     description: "",
   });
   const [adding, setAdding] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   const addNewFacility = async () => {
     if (!newFacility.name || !newFacility.description) {
@@ -36,15 +33,21 @@ function Facilities({ id }: { id: string }) {
     try {
       const res = await axios.post(
         `${process.env.NEXT_PUBLIC_BASEURL}/facilities/${id}`,
-        newFacility
+        newFacility,
+        { withCredentials: true }
       );
       console.log(res.data.data);
       toast.success("New facility added successfully");
       setFacility((prev) => [...prev, res.data.data]);
       setNewFacility({ id: "", name: "", description: "" });
-    } catch (error) {
-      console.error("Error adding new facility:", error);
-      toast.error("Failed to add new facility");
+    } catch (error: unknown) {
+      if (axios.isAxiosError(error) && error.response) {
+        // Show exactly the backend's message
+        toast.error(error.response.data.message);
+      } else {
+        // Fallback for network/CORS/unexpected errors
+        toast.error("An unexpected error occurred");
+      }
     } finally {
       setAdding(false);
     }
@@ -53,32 +56,50 @@ function Facilities({ id }: { id: string }) {
   const removeFacility = async (facilityId: string) => {
     try {
       await axios.delete(
-        `${process.env.NEXT_PUBLIC_BASEURL}/facilities/${facilityId}`
+        `${process.env.NEXT_PUBLIC_BASEURL}/facilities/${facilityId}`,
+        { withCredentials: true }
       );
       setFacility((prev) =>
         prev.filter((facility) => facility.id !== facilityId)
       );
-    } catch (error) {
-      console.error("Error removing facility:", error);
-      toast.error("Failed to remove facility");
+    } catch (error: unknown) {
+      if (axios.isAxiosError(error) && error.response) {
+        // Show exactly the backend's message
+        toast.error(error.response.data.message);
+      } else {
+        // Fallback for network/CORS/unexpected errors
+        toast.error("An unexpected error occurred");
+      }
     }
   };
 
   useEffect(() => {
     const fetch = async () => {
+      setIsLoading(true);
       try {
         const res = await axios.get(
           `${process.env.NEXT_PUBLIC_BASEURL}/facilities/${id}`
         );
         console.log(res.data.data);
         setFacility(res.data.data);
-      } catch (error) {
-        console.error("Error fetching facilities:", error);
-        toast.error("Failed to fetch facilities");
+      } catch (error: unknown) {
+        if (axios.isAxiosError(error) && error.response) {
+          // Show exactly the backend's message
+          toast.error(error.response.data.message);
+        } else {
+          // Fallback for network/CORS/unexpected errors
+          toast.error("An unexpected error occurred");
+        }
+      } finally {
+        setIsLoading(false);
       }
     };
     fetch();
   }, [id]);
+
+  if (isLoading) {
+    return <div>Loading...</div>;
+  }
 
   return (
     <Card>

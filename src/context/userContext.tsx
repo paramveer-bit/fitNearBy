@@ -7,12 +7,13 @@ import React, { useEffect, useState } from "react";
 type UserContextType = {
   user: UserData | null; // Replace 'any' with your user type if you have one
   setUser: React.Dispatch<React.SetStateAction<UserData | null>>;
+  isLoading: boolean;
 };
 
 interface UserData {
   email: string;
   isVerified: boolean;
-  isAdmin: boolean;
+  role: string;
 }
 
 // Create the context
@@ -25,7 +26,7 @@ export const MyContextProvider = ({
   children: React.ReactNode;
 }) => {
   const [user, setUser] = useState<UserData | null>(null);
-
+  const [isLoading, setIsLoading] = useState<boolean>(true);
   useEffect(() => {
     console.log("Fetching user data...");
     const fetchUser = async () => {
@@ -38,14 +39,19 @@ export const MyContextProvider = ({
         setUser(res.data.data);
       } catch (error) {
         // console.error("Error fetching user data:", error);
+        console.error("Error fetching user data:", error);
         setUser(null); // Set user to null if there's an error
+      } finally {
+        setIsLoading(false); // Set loading to false after the request completes
       }
     };
     fetchUser();
   }, []);
 
   return (
-    <UserContext.Provider value={{ user: user, setUser: setUser }}>
+    <UserContext.Provider
+      value={{ user: user, setUser: setUser, isLoading: isLoading }}
+    >
       {children}
     </UserContext.Provider>
   );
@@ -55,4 +61,5 @@ export const MyContextProvider = ({
 export const UserContext = React.createContext<UserContextType>({
   user: null,
   setUser: () => {},
+  isLoading: true,
 });

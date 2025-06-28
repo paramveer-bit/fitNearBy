@@ -108,8 +108,8 @@ function GymPlanes({ plans }: { plans: Plan[] }) {
             </div>
 
             <ul className="mt-4 space-y-2">
-              {plan.features != null &&
-                plan.features.map((feature, index) => (
+              {plan.featured != null &&
+                plan.featured.map((feature, index) => (
                   <li key={index} className="flex items-center text-sm">
                     <Check className="w-4 h-4 text-green-500 mr-2" />
                     {feature}

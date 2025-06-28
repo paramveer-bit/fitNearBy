@@ -7,6 +7,7 @@ import axios from "axios";
 import { ImageType } from "@/types";
 
 import { Loader2 } from "lucide-react";
+import { toast } from "sonner";
 
 function GymImages({ gymId }: { gymId: string }) {
   const dialogRef = useRef<HTMLDialogElement>(null);
@@ -31,12 +32,19 @@ function GymImages({ gymId }: { gymId: string }) {
         );
         setImages([...res.data.data, ...res.data.data]);
       } catch (error) {
+        if (axios.isAxiosError(error) && error.response) {
+          // Show exactly the backend's message
+          toast.error(error.response.data.message);
+        } else {
+          // Fallback for network/CORS/unexpected errors
+          toast.error("An unexpected error occurred");
+        }
       } finally {
         setLoading(false);
       }
     };
     fetch();
-  }, []);
+  }, [gymId]);
 
   if (loading) {
     return (
