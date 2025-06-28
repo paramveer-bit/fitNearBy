@@ -7,24 +7,15 @@ import { useParams } from "next/navigation";
 import {
   ArrowLeft,
   Check,
-  CreditCard,
   MapPin,
-  Phone,
   Mail,
-  Tag,
   AlertCircle,
   CheckCircle,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { GYM } from "@/types";
 // const gymData: GYM = {
@@ -78,6 +69,7 @@ import { GYM } from "@/types";
 import PlanSelector from "./PlanSelector";
 import PersonalDetails from "./PersonalDetails";
 import axios from "axios";
+import { toast } from "sonner";
 
 const loadScript = (src: string) => {
   return new Promise((resolve) => {
@@ -163,10 +155,18 @@ export default function BookingPage() {
         );
         setGymData(res.data.data);
         console.log("Gym Data:", res.data.data);
-      } catch (error) {}
+      } catch (error) {
+        if (axios.isAxiosError(error) && error.response) {
+          // Show exactly the backend's message
+          toast.error(error.response.data.message);
+        } else {
+          // Fallback for network/CORS/unexpected errors
+          toast.error("An unexpected error occurred");
+        }
+      }
     };
     fetch();
-  }, []);
+  }, [params.gymId]);
 
   const handelSubmit = async () => {
     if (!selectedPlan) {
@@ -198,12 +198,19 @@ export default function BookingPage() {
           withCredentials: true,
         }
       );
+      interface RazorpayPaymentResponse {
+        razorpay_order_id: string;
+        razorpay_payment_id: string;
+        razorpay_signature: string;
+      }
+
       const data = res.data.data;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const payment = new (window as any).Razorpay({
         key: process.env.NEXT_PUBLIC_RAZORPAY_KEY,
         order_id: data.order.id,
         ...data.order,
-        handler: async (response: any) => {
+        handler: async (response: RazorpayPaymentResponse) => {
           console.log("Payment Response:", response);
           const options = {
             razorpay_order_id: response.razorpay_order_id,
@@ -451,7 +458,7 @@ export default function BookingPage() {
                   </div>
 
                   <div className="flex justify-between text-green-600">
-                    <span>Discount ("NEW USER")</span>
+                    <span>Discount (&quot;NEW USER&quot;)</span>
                     <span>
                       -₹
                       {selectedPlanData
