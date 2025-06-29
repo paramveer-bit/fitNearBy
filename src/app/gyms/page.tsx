@@ -386,7 +386,7 @@ export default function GymsPage() {
         <Button
           variant="outline"
           onClick={clearAllFilters}
-          className="w-full h-12 border-2 border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300 font-semibold"
+          className="w-full h-12 border-2 border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300 font-semibold bg-transparent"
         >
           <X className="h-4 w-4 mr-2" />
           Clear All Filters ({activeFiltersCount})
@@ -398,15 +398,19 @@ export default function GymsPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-blue-50">
       {/* Hero Section */}
+
       <section className="relative overflow-hidden bg-gradient-to-br from-black via-gray-800 to-gray-600">
         {/* Background Pattern */}
+
         {/* <div className="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg width="60\" height="60" viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg"%3E%3Cg fill="none" fillRule="evenodd"%3E%3Cg fill="%23ffffff" fillOpacity="0.05"%3E%3Ccircle cx="30" cy="30" r="2"/%3E%3C/g%3E%3C/g%3E%3C/svg%3E')] opacity-20">
+
         </div> */}
 
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16 lg:py-24">
           <div className="text-center">
             <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm border border-white/20 rounded-full px-4 py-2 mb-6">
               <Zap className="h-4 w-4 text-yellow-400" />
+
               <span className="text-sm font-medium text-white">
                 Find Your Perfect Fitness Match
               </span>
@@ -426,19 +430,23 @@ export default function GymsPage() {
             </p>
 
             {/* Enhanced Search Bar */}
+
             <div className="max-w-4xl mx-auto">
               <Card className="border-0 shadow-2xl bg-white/95 backdrop-blur-sm">
                 <CardContent className="p-6">
                   <div className="flex flex-col sm:flex-row gap-4">
                     <div className="relative flex-1">
                       <MapPin className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+
                       <Input
                         placeholder="Enter your location"
                         className="pl-12 h-14 text-lg border-gray-200 focus:border-blue-500 focus:ring-blue-500/20 bg-white"
                       />
                     </div>
+
                     <div className="relative flex-1">
                       <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+
                       <Input
                         placeholder="Search gyms, trainers, classes..."
                         value={searchTerm}
@@ -446,6 +454,7 @@ export default function GymsPage() {
                         className="pl-12 h-14 text-lg border-gray-200 focus:border-blue-500 focus:ring-blue-500/20 bg-white"
                       />
                     </div>
+
                     <Button
                       size="lg"
                       className="h-14 px-8 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-200 w-full sm:w-auto"
@@ -463,30 +472,36 @@ export default function GymsPage() {
 
       <div className="flex flex-col lg:flex-row">
         {/* Desktop Filter Sidebar */}
+
         <div className="hidden lg:block w-96 bg-white/80 backdrop-blur-sm border-r border-gray-200 p-6 overflow-y-auto max-h-screen sticky top-0">
           <FilterContent />
         </div>
 
         {/* Main Content */}
+
         <div className="flex-1 p-4 sm:p-6 lg:p-8">
           {/* Mobile Filter Controls */}
+
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8 lg:hidden">
             <div className="flex items-center gap-3">
               <Sheet open={isFilterOpen} onOpenChange={setIsFilterOpen}>
                 <SheetTrigger asChild>
                   <Button
                     variant="outline"
-                    className="flex items-center gap-2 h-12 px-6 border-2 hover:border-blue-300 hover:bg-blue-50"
+                    className="flex items-center gap-2 h-10 px-4 border-2 hover:border-blue-300 hover:bg-blue-50 bg-transparent"
                   >
                     <SlidersHorizontal className="h-4 w-4" />
-                    <span className="font-semibold">Filters</span>
+
+                    <span className="font-medium">Filters</span>
+
                     {activeFiltersCount > 0 && (
-                      <Badge className="ml-1 bg-blue-600 hover:bg-blue-700">
+                      <Badge className="ml-1 bg-blue-600 hover:bg-blue-700 text-xs">
                         {activeFiltersCount}
                       </Badge>
                     )}
                   </Button>
                 </SheetTrigger>
+
                 <SheetContent
                   side="left"
                   className="w-96 overflow-y-auto bg-white"
@@ -495,39 +510,43 @@ export default function GymsPage() {
                     <SheetTitle className="text-xl font-bold">
                       Filter Gyms
                     </SheetTitle>
+
                     <SheetDescription className="text-gray-600">
                       Refine your search to find the perfect gym for your
                       fitness journey.
                     </SheetDescription>
                   </SheetHeader>
+
                   <FilterContent />
                 </SheetContent>
               </Sheet>
 
               {/* Mobile Sort */}
-              <Card className="border-gray-200">
-                <CardContent className="p-3">
-                  <div className="flex items-center gap-3">
-                    <Label className="text-sm font-semibold whitespace-nowrap">
-                      Sort:
-                    </Label>
-                    <Select value={sortBy} onValueChange={setSortBy}>
-                      <SelectTrigger className="w-36 border-0 focus:ring-0">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="distance">📍 Distance</SelectItem>
-                        <SelectItem value="rating">⭐ Rating</SelectItem>
-                        <SelectItem value="price">💰 Price</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </CardContent>
-              </Card>
+
+              <div className="flex items-center gap-2 border border-gray-200 rounded-lg px-3 py-2">
+                <Label className="text-sm font-medium whitespace-nowrap text-gray-700">
+                  Sort:
+                </Label>
+
+                <Select value={sortBy} onValueChange={setSortBy}>
+                  <SelectTrigger className="w-28 h-6 border-0 focus:ring-0 text-sm">
+                    <SelectValue />
+                  </SelectTrigger>
+
+                  <SelectContent>
+                    <SelectItem value="distance">📍 Distance</SelectItem>
+
+                    <SelectItem value="rating">⭐ Rating</SelectItem>
+
+                    <SelectItem value="price">💰 Price</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
           </div>
 
           {/* Active Filters Display */}
+
           {activeFiltersCount > 0 && (
             <Card className="mb-8 border-blue-200 bg-blue-50/50">
               <CardContent className="p-4">
@@ -540,21 +559,25 @@ export default function GymsPage() {
                     {activeFiltersCount} Active Filter
                     {activeFiltersCount !== 1 ? "s" : ""}
                   </Badge>
+
                   {filters.priceRange[0] > 0 || filters.priceRange[1] < 100 ? (
                     <Badge className="bg-green-600 hover:bg-green-700">
                       💰 ${filters.priceRange[0]} - ${filters.priceRange[1]}
                     </Badge>
                   ) : null}
+
                   {filters.minRating > 0 && (
                     <Badge className="bg-yellow-600 hover:bg-yellow-700">
                       ⭐ {filters.minRating}+ stars
                     </Badge>
                   )}
+
                   {filters.maxDistance < 10 && (
                     <Badge className="bg-purple-600 hover:bg-purple-700">
                       📍 ≤ {filters.maxDistance} km
                     </Badge>
                   )}
+
                   {filters.facilities.map((facility) => (
                     <Badge
                       key={facility}
@@ -568,8 +591,9 @@ export default function GymsPage() {
             </Card>
           )}
 
-          {/* Results Header */}
-          <div className="mb-8">
+          {/* Results Header - Hidden on mobile */}
+
+          <div className="mb-8 hidden sm:block">
             <Card className="border-0 shadow-sm bg-gradient-to-r from-white to-gray-50">
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
@@ -578,6 +602,7 @@ export default function GymsPage() {
                       {sortedGyms.length} Gym
                       {sortedGyms.length !== 1 ? "s" : ""} Found
                     </h2>
+
                     <p className="text-gray-600">
                       Discover the best fitness centers in your area
                       {activeFiltersCount > 0 && (
@@ -588,6 +613,7 @@ export default function GymsPage() {
                       )}
                     </p>
                   </div>
+
                   <div className="hidden sm:flex items-center gap-2 text-sm text-gray-500">
                     <TrendingUp className="h-4 w-4" />
                     Sorted by {sortBy}
@@ -598,6 +624,7 @@ export default function GymsPage() {
           </div>
 
           {/* Gym Cards Grid */}
+
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-2 2xl:grid-cols-2 gap-6 lg:gap-8">
             {sortedGyms.map((gym) => (
               <div
@@ -610,19 +637,23 @@ export default function GymsPage() {
           </div>
 
           {/* No Results */}
+
           {sortedGyms.length === 0 && (
             <Card className="border-0 shadow-lg bg-gradient-to-br from-gray-50 to-white">
               <CardContent className="p-12 text-center">
                 <div className="w-20 h-20 bg-gradient-to-br from-gray-200 to-gray-300 rounded-full flex items-center justify-center mx-auto mb-6">
                   <Search className="h-8 w-8 text-gray-500" />
                 </div>
+
                 <h3 className="text-2xl font-bold text-gray-900 mb-4">
                   No gyms found
                 </h3>
+
                 <p className="text-gray-600 mb-8 max-w-md mx-auto">
                   We couldn&apos;t find any gyms matching your search criteria.
                   Try adjusting your filters or search terms.
                 </p>
+
                 <div className="flex flex-col sm:flex-row gap-3 justify-center">
                   <Button
                     variant="outline"
@@ -631,6 +662,7 @@ export default function GymsPage() {
                   >
                     Clear Search
                   </Button>
+
                   {activeFiltersCount > 0 && (
                     <Button
                       onClick={clearAllFilters}
@@ -650,14 +682,19 @@ export default function GymsPage() {
         .custom-scrollbar::-webkit-scrollbar {
           width: 6px;
         }
+
         .custom-scrollbar::-webkit-scrollbar-track {
           background: #f1f5f9;
+
           border-radius: 3px;
         }
+
         .custom-scrollbar::-webkit-scrollbar-thumb {
           background: #cbd5e1;
+
           border-radius: 3px;
         }
+
         .custom-scrollbar::-webkit-scrollbar-thumb:hover {
           background: #94a3b8;
         }

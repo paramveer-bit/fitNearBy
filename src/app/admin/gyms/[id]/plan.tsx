@@ -48,7 +48,13 @@ import { Plan } from "@/types";
 import { Loader } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
-const PlanType: PlanType[] = ["TRIAL", "MONTHLY", "QUARTERLY", "YEARLY"];
+const PlanType: PlanType[] = [
+  "TRIAL",
+  "MONTHLY",
+  "QUARTERLY",
+  "YEARLY",
+  "HALF_YEARLY",
+];
 function Plans({ id }: { id: string }) {
   const [open, setOpen] = useState(false);
   const [plans, setPlans] = useState<Plan[]>([]);

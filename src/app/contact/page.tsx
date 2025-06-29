@@ -95,7 +95,7 @@ export default function ContactPage() {
                 <p className="text-gray-600 mb-2">
                   Call us for immediate assistance
                 </p>
-                <p className="font-semibold text-lg">+91 9625323218</p>
+                <p className="font-semibold text-lg">+91 9717796714</p>
                 <div className="flex items-center mt-2 text-sm text-gray-600">
                   <Clock className="h-4 w-4 mr-1" />
                   Mon-Fri: 8AM-8PM, Sat-Sun: 9AM-6PM

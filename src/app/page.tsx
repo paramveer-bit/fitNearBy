@@ -29,12 +29,16 @@ import {
 import Image from "next/image";
 import Hero from "@/components/Landing/Hero";
 import home from "@/assets/home.jpeg"; // Adjust the path as necessary
+import ImageCarousel from "@/components/Landing/image-carousel";
 
 export default function HomePage() {
   return (
     <div className="min-h-screen overflow-hidden">
       {/* Hero Section */}
       <Hero />
+
+      {/* Image Carousel Section */}
+      <ImageCarousel />
 
       {/* Features Section */}
       <section className="py-24 bg-gradient-to-br from-slate-50 via-blue-50/30 to-purple-50/30 relative overflow-hidden">
@@ -440,10 +444,6 @@ export default function HomePage() {
             <div className="flex items-center">
               <CheckCircle className="w-5 h-5 text-green-400 mr-2" />
               <span>No Setup Fees</span>
-            </div>
-            <div className="flex items-center">
-              <CheckCircle className="w-5 h-5 text-green-400 mr-2" />
-              <span>Cancel Anytime</span>
             </div>
             <div className="flex items-center">
               <CheckCircle className="w-5 h-5 text-green-400 mr-2" />

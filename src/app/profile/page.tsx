@@ -15,8 +15,9 @@ import axios from "axios";
 import { Loader } from "lucide-react";
 import AddReview from "@/components/profile/AddReview";
 import { toast } from "sonner";
-import DounloadButton from "@/components/GymBookingCard";
+import DownloadButton from "@/components/GymBookingCard";
 import { useRouter } from "next/navigation";
+import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 
 export default function ProfilePage() {
   const { user, setUser } = useContext(UserContext);
@@ -25,6 +26,7 @@ export default function ProfilePage() {
   const [open, setOpen] = useState(true);
   const [loggingOut, setLoggingOut] = useState(false);
   const router = useRouter();
+  const [gymCard, setGymCard] = useState(false);
   const getStatusColor = (status: string) => {
     switch (status) {
       case "CONFIRMED":
@@ -195,42 +197,43 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
-        {/* Header */}
-        <div className="mb-8">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div className="flex items-start sm:items-center space-x-4">
-              <Avatar className="h-16 w-16 sm:h-20 sm:w-20">
-                <AvatarImage src="/placeholder.svg?height=80&width=80" />
-                <AvatarFallback className="text-xl">
-                  {profileData.name
-                    .split(" ")
-                    .map((n) => n[0])
-                    .join("")}
-                </AvatarFallback>
-              </Avatar>
-              <div>
-                <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 ">
-                  {profileData.name}
-                </h1>
-                <div className="flex items-center text-sm sm:text-base text-gray-600 mt-1">
-                  <Mail className="h-4 w-4 mr-1" />
-                  {profileData.email}
-                  {profileData.isVerified && (
-                    <Badge variant="secondary" className="ml-2 text-xs">
-                      Verified
-                    </Badge>
-                  )}
-                </div>
-                <div className="flex items-center text-sm sm:text-base text-gray-600 mt-1">
-                  <Calendar className="h-4 w-4 mr-1" />
-                  Member since{" "}
-                  {new Date(profileData.createdAt).toLocaleDateString()}
+    <>
+      <div className="min-h-screen bg-gray-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
+          {/* Header */}
+          <div className="mb-8">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <div className="flex items-start sm:items-center space-x-4">
+                <Avatar className="h-16 w-16 sm:h-20 sm:w-20">
+                  <AvatarImage src="/placeholder.svg?height=80&width=80" />
+                  <AvatarFallback className="text-xl">
+                    {profileData.name
+                      .split(" ")
+                      .map((n) => n[0])
+                      .join("")}
+                  </AvatarFallback>
+                </Avatar>
+                <div>
+                  <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 ">
+                    {profileData.name}
+                  </h1>
+                  <div className="flex items-center text-sm sm:text-base text-gray-600 mt-1">
+                    <Mail className="h-4 w-4 mr-1" />
+                    {profileData.email}
+                    {profileData.isVerified && (
+                      <Badge variant="secondary" className="ml-2 text-xs">
+                        Verified
+                      </Badge>
+                    )}
+                  </div>
+                  <div className="flex items-center text-sm sm:text-base text-gray-600 mt-1">
+                    <Calendar className="h-4 w-4 mr-1" />
+                    Member since{" "}
+                    {new Date(profileData.createdAt).toLocaleDateString()}
+                  </div>
                 </div>
               </div>
-            </div>
-            {/* <Dialog open={isEditing} onOpenChange={setIsEditing}>
+              {/* <Dialog open={isEditing} onOpenChange={setIsEditing}>
               <DialogTrigger asChild>
                 <Button variant="outline">
                   <Edit className="h-4 w-4 mr-2" />
@@ -284,237 +287,166 @@ export default function ProfilePage() {
                 </div>
               </DialogContent>
             </Dialog> */}
-            <div className="flex flex-col sm:flex-row gap-2">
-              <Button
-                variant="outline"
-                onClick={handleLogout}
-                disabled={loggingOut}
-                className="w-full sm:w-auto bg-transparent"
-              >
-                {loggingOut ? (
-                  <Loader className="h-4 w-4 mr-2 animate-spin" />
-                ) : (
-                  <LogOut className="h-4 w-4 mr-2" />
-                )}
-                {loggingOut ? "Logging out..." : "Logout"}
-              </Button>
+              <div className="flex flex-col sm:flex-row gap-2">
+                <Button
+                  variant="outline"
+                  onClick={handleLogout}
+                  disabled={loggingOut}
+                  className="w-full sm:w-auto bg-transparent"
+                >
+                  {loggingOut ? (
+                    <Loader className="h-4 w-4 mr-2 animate-spin" />
+                  ) : (
+                    <LogOut className="h-4 w-4 mr-2" />
+                  )}
+                  {loggingOut ? "Logging out..." : "Logout"}
+                </Button>
+              </div>
             </div>
           </div>
-        </div>
 
-        {/* Profile Stats */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-8">
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg">Active Bookings</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold text-blue-600">
-                {
-                  profileData.Booking.filter(
-                    (b) => b.endDate >= new Date().toISOString()
-                  ).length
-                }
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg">Total Bookings</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold text-green-600">
-                {profileData.Booking.length}
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg">Reviews Written</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold text-purple-600">
-                {profileData.Reviews.length}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Main Content */}
-        <Tabs defaultValue="bookings" className="w-full">
-          <TabsList className="grid w-full grid-cols-2 mb-6">
-            <TabsTrigger value="bookings">My Bookings</TabsTrigger>
-            <TabsTrigger value="reviews">My Reviews</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="bookings" className="space-y-6">
-            <div className="space-y-4">
-              {profileData.Booking.map((booking) => (
-                <Card key={booking.id}>
-                  <CardContent className="p-6">
-                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                      <div className="flex items-start space-x-3 sm:space-x-4">
-                        <Avatar className="h-10 w-10 sm:h-12 sm:w-12">
-                          <AvatarImage src={"/placeholder.svg"} />
-                          <AvatarFallback>
-                            {booking.gym.name
-                              .split(" ")
-                              .map((n) => n[0])
-                              .join("")}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div>
-                          <h3 className="font-semibold text-base sm:text-lg">
-                            {booking.gym.name}
-                          </h3>
-                          <div className="flex items-center text-gray-600 text-sm">
-                            <MapPin className="h-4 w-4 mr-1" />
-                            {booking.gym.location}
-                          </div>
-                          <div className="flex items-center text-gray-600 text-sm mt-1">
-                            <Calendar className="h-4 w-4 mr-1" />
-                            {new Date(
-                              booking.startDate
-                            ).toLocaleDateString()} -{" "}
-                            {new Date(booking.endDate).toLocaleDateString()}
-                          </div>
-                        </div>
-                      </div>
-                      <div className="text-left sm:text-right">
-                        <Badge className={getStatusColor(booking.status)}>
-                          {booking.status}
-                        </Badge>
-                        <div className="mt-2">
-                          <div className="font-semibold">
-                            {booking.plan.type}
-                          </div>
-                          <div className="text-gray-600">
-                            Rs. {booking.plan.newprice}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="mt-4 flex flex-col sm:flex-row sm:justify-end gap-2 sm:gap-2 sm:space-x-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="w-full sm:w-auto"
-                        asChild
-                      >
-                        <a href={`/gyms/${booking.gym.id}`}>View Gym</a>
-                      </Button>
-                      {booking.status === "CONFIRMED" && (
-                        <DounloadButton
-                          booking={booking}
-                          buttonText={"Download Card"}
-                        />
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </TabsContent>
-
-          <TabsContent value="reviews" className="space-y-6">
-            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
-              <h2 className="text-xl sm:text-2xl font-bold">My Reviews</h2>
-              <AddReview
-                booking={profileData.Booking}
-                reviews={profileData.Reviews}
-                handleAddReview={handleAddReview}
-              />
-            </div>
-            <div className="space-y-4">
-              {profileData.Reviews.map((review) => (
-                <ReviewCard
-                  id={review.id}
-                  key={review.id}
-                  review={review}
-                  type={"gym"}
-                  handelDelete={handelDelete}
-                />
-              ))}
-            </div>
-          </TabsContent>
-
-          {/* <TabsContent value="settings" className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center">
-                    <User className="h-5 w-5 mr-2" />
-                    Account Settings
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <span>Email Notifications</span>
-                    <Button variant="outline" size="sm">
-                      Configure
-                    </Button>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span>Privacy Settings</span>
-                    <Button variant="outline" size="sm">
-                      Manage
-                    </Button>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span>Change Password</span>
-                    <Button variant="outline" size="sm">
-                      Update
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center">
-                    <CreditCard className="h-5 w-5 mr-2" />
-                    Billing & Payments
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <span>Payment Methods</span>
-                    <Button variant="outline" size="sm">
-                      Manage
-                    </Button>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span>Billing History</span>
-                    <Button variant="outline" size="sm">
-                      View
-                    </Button>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span>Download Receipts</span>
-                    <Button variant="outline" size="sm">
-                      Download
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-
+          {/* Profile Stats */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-8">
             <Card>
-              <CardHeader>
-                <CardTitle className="text-red-600">Danger Zone</CardTitle>
-                <CardDescription>
-                  These actions are permanent and cannot be undone
-                </CardDescription>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg">Active Bookings</CardTitle>
               </CardHeader>
               <CardContent>
-                <Button variant="destructive" size="sm">
-                  Delete Account
-                </Button>
+                <div className="text-3xl font-bold text-blue-600">
+                  {
+                    profileData.Booking.filter(
+                      (b) => b.endDate >= new Date().toISOString()
+                    ).length
+                  }
+                </div>
               </CardContent>
             </Card>
-          </TabsContent> */}
-        </Tabs>
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg">Total Bookings</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-3xl font-bold text-green-600">
+                  {profileData.Booking.length}
+                </div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg">Reviews Written</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-3xl font-bold text-purple-600">
+                  {profileData.Reviews.length}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Main Content */}
+          <Tabs defaultValue="bookings" className="w-full">
+            <TabsList className="grid w-full grid-cols-2 mb-6">
+              <TabsTrigger value="bookings">My Bookings</TabsTrigger>
+              <TabsTrigger value="reviews">My Reviews</TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="bookings" className="space-y-6">
+              <div className="space-y-4">
+                {profileData.Booking.map((booking) => (
+                  <Card key={booking.id}>
+                    <CardContent className="p-6">
+                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                        <div className="flex items-start space-x-3 sm:space-x-4">
+                          <Avatar className="h-10 w-10 sm:h-12 sm:w-12">
+                            <AvatarImage src={"/placeholder.svg"} />
+                            <AvatarFallback>
+                              {booking.gym.name
+                                .split(" ")
+                                .map((n) => n[0])
+                                .join("")}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div>
+                            <h3 className="font-semibold text-base sm:text-lg">
+                              {booking.gym.name}
+                            </h3>
+                            <div className="flex items-center text-gray-600 text-sm">
+                              <MapPin className="h-4 w-4 mr-1" />
+                              {booking.gym.location}
+                            </div>
+                            <div className="flex items-center text-gray-600 text-sm mt-1">
+                              <Calendar className="h-4 w-4 mr-1" />
+                              {new Date(
+                                booking.startDate
+                              ).toLocaleDateString()}{" "}
+                              - {new Date(booking.endDate).toLocaleDateString()}
+                            </div>
+                          </div>
+                        </div>
+                        <div className="text-left sm:text-right">
+                          <Badge className={getStatusColor(booking.status)}>
+                            {booking.status}
+                          </Badge>
+                          <div className="mt-2">
+                            <div className="font-semibold">
+                              {booking.plan.type}
+                            </div>
+                            <div className="text-gray-600">
+                              Rs. {booking.plan.newprice}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="mt-4 flex flex-col sm:flex-row sm:justify-end gap-2 sm:gap-2 sm:space-x-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="w-full sm:w-auto"
+                          asChild
+                        >
+                          <a href={`/gyms/${booking.gym.id}`}>View Gym</a>
+                        </Button>
+                        {booking.status === "CONFIRMED" && (
+                          <Dialog open={gymCard} onOpenChange={setGymCard}>
+                            <DialogTrigger asChild>
+                              <Button size="sm">View Card</Button>
+                            </DialogTrigger>
+                            <DialogContent className="w-full max-w-sm sm:max-w-[500px] px-4">
+                              <DownloadButton booking={booking} />
+                            </DialogContent>
+                          </Dialog>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </TabsContent>
+
+            <TabsContent value="reviews" className="space-y-6">
+              <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+                <h2 className="text-xl sm:text-2xl font-bold">My Reviews</h2>
+                <AddReview
+                  booking={profileData.Booking}
+                  reviews={profileData.Reviews}
+                  handleAddReview={handleAddReview}
+                />
+              </div>
+              <div className="space-y-4">
+                {profileData.Reviews.map((review) => (
+                  <ReviewCard
+                    id={review.id}
+                    key={review.id}
+                    review={review}
+                    type={"gym"}
+                    handelDelete={handelDelete}
+                  />
+                ))}
+              </div>
+            </TabsContent>
+          </Tabs>
+        </div>
       </div>
-    </div>
+    </>
   );
 }

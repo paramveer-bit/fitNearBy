@@ -450,7 +450,7 @@ export default function BookingPage() {
 
                   <div className="space-y-3">
                     <Button size="lg" className="w-full" asChild>
-                      <Link href="/dashboard">Go to Dashboard</Link>
+                      <Link href="/profile">Go to Profile</Link>
                     </Button>
                   </div>
                 </CardContent>
