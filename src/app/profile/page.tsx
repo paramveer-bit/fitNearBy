@@ -315,7 +315,9 @@ export default function ProfilePage() {
                 <div className="text-3xl font-bold text-blue-600">
                   {
                     profileData.Booking.filter(
-                      (b) => b.endDate >= new Date().toISOString()
+                      (b) =>
+                        b.endDate >= new Date().toISOString() &&
+                        b.status === "CONFIRMED"
                     ).length
                   }
                 </div>

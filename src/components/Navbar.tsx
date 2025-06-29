@@ -37,7 +37,7 @@ export default function Navbar() {
               <Image
                 src={logo || "/placeholder.svg"}
                 alt="Gym Logo"
-                className="w-56 mt-3 h-40"
+                className="w-32 mt-3 h-16"
               />
             </Link>
           </div>

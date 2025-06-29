@@ -59,7 +59,7 @@ export default function AuthDialog({
       setSigning(true);
       const res = await axios.post(
         `${process.env.NEXT_PUBLIC_BASEURL}/user/auth/signIn`,
-        { email: loginData.email, password: loginData.password },
+        { email: loginData.email.toLowerCase(), password: loginData.password },
         { withCredentials: true }
       );
       console.log(res);
@@ -126,7 +126,7 @@ export default function AuthDialog({
           `${process.env.NEXT_PUBLIC_BASEURL}/user/auth/signup`,
           {
             name: signupData.name,
-            email: signupData.email,
+            email: signupData.email.toLowerCase(),
             phone_number: signupData.phoneNumber,
             password: signupData.password,
           }
@@ -161,7 +161,7 @@ export default function AuthDialog({
         const res = await axios.post(
           `${process.env.NEXT_PUBLIC_BASEURL}/user/auth/verifyUser`,
           {
-            email: signupData.email,
+            email: signupData.email.toLowerCase(),
             otp: signupData.otp,
           },
           { withCredentials: true }
