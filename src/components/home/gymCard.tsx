@@ -34,6 +34,7 @@ function GymCard({ gym }: { gym: GYM }) {
     if (distance < 5) return "bg-yellow-100 text-yellow-800";
     return "bg-gray-100 text-gray-800";
   };
+  console.log(gym);
   return (
     <Card
       key={gym.id}

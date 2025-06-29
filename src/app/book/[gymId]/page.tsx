@@ -11,6 +11,7 @@ import {
   Mail,
   AlertCircle,
   CheckCircle,
+  Loader,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -114,6 +115,7 @@ export default function BookingPage() {
     medicalConditions: "",
     agreeToTerms: false,
   });
+  const [loading, setLoading] = useState(false);
 
   const steps = [
     { id: 1, title: "Select Plan", description: "Choose your membership" },
@@ -149,12 +151,24 @@ export default function BookingPage() {
   useEffect(() => {
     loadScript("https://checkout.razorpay.com/v1/checkout.js");
     const fetch = async () => {
+      setLoading(true);
       try {
         const res = await axios.get(
           `${process.env.NEXT_PUBLIC_BASEURL}/gym/${params.gymId}`
         );
+
+        const plans = await axios.get(
+          `${process.env.NEXT_PUBLIC_BASEURL}/plans/eligible/${params.gymId}`,
+          { withCredentials: true }
+        );
+
+        if (plans.data.data.length === 0) {
+          toast.error("No plans available for this gym.");
+          return;
+        }
+        // Combine gym data with plans
+        res.data.data.Plans = plans.data.data;
         setGymData(res.data.data);
-        console.log("Gym Data:", res.data.data);
       } catch (error) {
         if (axios.isAxiosError(error) && error.response) {
           // Show exactly the backend's message
@@ -163,6 +177,8 @@ export default function BookingPage() {
           // Fallback for network/CORS/unexpected errors
           toast.error("An unexpected error occurred");
         }
+      } finally {
+        setLoading(false);
       }
     };
     fetch();
@@ -205,13 +221,14 @@ export default function BookingPage() {
       }
 
       const data = res.data.data;
+      console.log("Order Data:", data);
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const payment = new (window as any).Razorpay({
         key: process.env.NEXT_PUBLIC_RAZORPAY_KEY,
         order_id: data.order.id,
         ...data.order,
         handler: async (response: RazorpayPaymentResponse) => {
-          console.log("Payment Response:", response);
+          console.log("Payment Response:++++++++++++++++++++++++", response);
           const options = {
             razorpay_order_id: response.razorpay_order_id,
             razorpay_payment_id: response.razorpay_payment_id,
@@ -225,6 +242,10 @@ export default function BookingPage() {
             {
               withCredentials: true,
             }
+          );
+          console.log(
+            "Payment Verification Response:------------------",
+            res.data
           );
 
           if (res.data.data) {
@@ -244,6 +265,13 @@ export default function BookingPage() {
     console.log("Booking Data:", bookingData);
     handleNextStep();
   };
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-gray-50">
+        <Loader />
+      </div>
+    );
+  }
 
   if (!gymData) {
     return (
@@ -349,7 +377,39 @@ export default function BookingPage() {
             )}
 
             {/* Step 3: Payment */}
-
+            {currentStep === 3 && (
+              <Card>
+                <CardContent className="flex flex-col items-center justify-center py-16">
+                  <svg
+                    className="animate-spin h-10 w-10 text-blue-600 mb-4"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    ></circle>
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+                    ></path>
+                  </svg>
+                  <h2 className="text-xl font-semibold mb-2">
+                    Processing Payment
+                  </h2>
+                  <p className="text-gray-600 text-center">
+                    Please wait while we process your payment. Do not refresh or
+                    close this page.
+                  </p>
+                </CardContent>
+              </Card>
+            )}
             {/* Step 4: Confirmation */}
             {currentStep === 4 && (
               <Card>
@@ -362,7 +422,8 @@ export default function BookingPage() {
                   </h2>
                   <p className="text-gray-600 mb-6">
                     Your membership has been successfully booked. You&apos;ll
-                    receive a confirmation email shortly.
+                    receive a confirmation email shortly. Download GYM card from
+                    your profile.
                   </p>
 
                   <div className="bg-gray-50 rounded-lg p-6 mb-6">
@@ -390,9 +451,6 @@ export default function BookingPage() {
                   <div className="space-y-3">
                     <Button size="lg" className="w-full" asChild>
                       <Link href="/dashboard">Go to Dashboard</Link>
-                    </Button>
-                    <Button variant="outline" size="lg" className="w-full">
-                      Download Receipt
                     </Button>
                   </div>
                 </CardContent>

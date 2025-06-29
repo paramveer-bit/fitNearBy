@@ -30,7 +30,7 @@ function GymImages({ gymId }: { gymId: string }) {
         const res = await axios.get(
           `${process.env.NEXT_PUBLIC_BASEURL}/gym/${gymId}/images`
         );
-        setImages([...res.data.data, ...res.data.data]);
+        setImages(res.data.data);
       } catch (error) {
         if (axios.isAxiosError(error) && error.response) {
           // Show exactly the backend's message

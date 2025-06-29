@@ -101,8 +101,14 @@ function PlanSelector({
           ))}
         </div>
 
+        {!selectedPlan && (
+          <p className="mt-4 text-sm text-gray-500 text-center">
+            Please select a plan to continue
+          </p>
+        )}
+
         <div className="mt-6 flex justify-end">
-          <Button onClick={handleNextStep} size="lg">
+          <Button onClick={handleNextStep} size="lg" disabled={!selectedPlan}>
             Continue to Details
           </Button>
         </div>

@@ -11,7 +11,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import GymImages from "@/components/gyms/GymImages";
-import { MapPin, Star, Mail, Dumbbell } from "lucide-react";
+import { MapPin, Star, Mail, Dumbbell, ExternalLink } from "lucide-react";
 import Image from "next/image";
 import GymPlanes from "@/components/gyms/GymPlanes";
 import ReviewCard from "@/components/profile/Review";
@@ -36,6 +36,10 @@ export default function GymDetailPage() {
   const [loading, setLoading] = useState(true);
   const [reviews, setReviews] = useState<Reviews[]>([]);
   const user = useContext(UserContext);
+
+  const handleGetDirections = () => {
+    window.open(`${gym?.locationLink}`, "_blank");
+  };
 
   useEffect(() => {
     setLoading(true);
@@ -210,14 +214,29 @@ export default function GymDetailPage() {
                     </CardHeader>
                     <CardContent>
                       <div className="space-y-2">
-                        {gym.GymOperatingHours.map((hours) => (
-                          <div key={hours.day} className="flex justify-between">
-                            <span className="font-medium">{hours.day}</span>
-                            <span className="text-gray-600">
-                              {hours.openAt} - {hours.closeAt}
-                            </span>
-                          </div>
-                        ))}
+                        {[
+                          "Sunday",
+                          "Monday",
+                          "Tuesday",
+                          "Wednesday",
+                          "Thursday",
+                          "Friday",
+                          "Saturday",
+                        ].map((day) => {
+                          const hours = gym.GymOperatingHours.find(
+                            (h) => h.day.toLowerCase() === day.toLowerCase()
+                          );
+                          return (
+                            <div key={day} className="flex justify-between">
+                              <span className="font-medium">{day}</span>
+                              <span className="text-gray-600">
+                                {hours
+                                  ? `${hours.openAt} - ${hours.closeAt}`
+                                  : "Closed"}
+                              </span>
+                            </div>
+                          );
+                        })}
                       </div>
                     </CardContent>
                   </Card>
@@ -281,6 +300,16 @@ export default function GymDetailPage() {
                     <MapPin className="h-4 w-4 mr-3 text-gray-600 mt-1" />
                     <span>{gym.address}</span>
                   </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full mt-3 bg-transparent"
+                    onClick={handleGetDirections}
+                  >
+                    <MapPin className="h-4 w-4 mr-2" />
+                    Get Directions
+                    <ExternalLink className="h-3 w-3 ml-2" />
+                  </Button>
                 </CardContent>
               </Card>
               {/* Quick stats */}

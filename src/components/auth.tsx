@@ -76,15 +76,17 @@ export default function AuthDialog({
       setSigning(false);
     }
 
-    // await fetchUser();
+    await fetchUser();
 
     if (type === "book") {
       console.log("Booking gym with ID:", id);
+
       router.push(`/book/${id}`);
       onOpenChange(false);
       return;
     }
-    router.push("/profile");
+    console.log("Redirecting to profile page");
+    window.location.reload();
     onOpenChange(false);
   };
 

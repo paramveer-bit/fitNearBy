@@ -103,6 +103,9 @@ export interface Booking {
     status: "PENDING" | "CONFIRMED" | "CANCELLED";
     createdAt: string; // ISO date string
     plan: Plan;
-
+    name?: string; // Optional, only if the booking is for a gym
+    email?: string; // Optional, only if the booking is for a gym
+    phone_number?: string; // Optional, only if the booking is for a gym
+    orderId?: string; // Optional, only if the booking is for a gym
 
 }

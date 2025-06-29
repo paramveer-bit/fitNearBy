@@ -8,18 +8,23 @@ import AuthDialog from "@/components/auth";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Mail, Calendar, MapPin } from "lucide-react";
+import { Mail, Calendar, MapPin, LogOut } from "lucide-react";
 import ReviewCard from "@/components/profile/Review";
 import type { UserProfile } from "@/types";
 import axios from "axios";
 import { Loader } from "lucide-react";
 import AddReview from "@/components/profile/AddReview";
 import { toast } from "sonner";
+import DounloadButton from "@/components/GymBookingCard";
+import { useRouter } from "next/navigation";
 
 export default function ProfilePage() {
-  const { user } = useContext(UserContext);
+  const { user, setUser } = useContext(UserContext);
   const [profileData, setProfileData] = useState<UserProfile>();
   const [loading, setLoading] = useState(false);
+  const [open, setOpen] = useState(true);
+  const [loggingOut, setLoggingOut] = useState(false);
+  const router = useRouter();
   const getStatusColor = (status: string) => {
     switch (status) {
       case "CONFIRMED":
@@ -82,6 +87,31 @@ export default function ProfilePage() {
     }
   };
 
+  const handleLogout = async () => {
+    try {
+      setLoggingOut(true);
+      await axios.get(`${process.env.NEXT_PUBLIC_BASEURL}/user/auth/signout`, {
+        withCredentials: true,
+      });
+
+      // Clear user context
+      setUser(null);
+
+      toast.success("Logged out successfully!");
+
+      // Redirect to home page or login page
+      router.push("/");
+    } catch (error) {
+      if (axios.isAxiosError(error) && error.response) {
+        toast.error(error.response.data.message);
+      } else {
+        toast.error("An unexpected error occurred during logout");
+      }
+    } finally {
+      setLoggingOut(false);
+    }
+  };
+
   useEffect(() => {
     const fetch = async () => {
       try {
@@ -132,8 +162,8 @@ export default function ProfilePage() {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <AuthDialog
-          open={true}
-          onOpenChange={() => {}}
+          open={open}
+          onOpenChange={setOpen}
           type="profile"
           id={null}
         />
@@ -254,6 +284,21 @@ export default function ProfilePage() {
                 </div>
               </DialogContent>
             </Dialog> */}
+            <div className="flex flex-col sm:flex-row gap-2">
+              <Button
+                variant="outline"
+                onClick={handleLogout}
+                disabled={loggingOut}
+                className="w-full sm:w-auto bg-transparent"
+              >
+                {loggingOut ? (
+                  <Loader className="h-4 w-4 mr-2 animate-spin" />
+                ) : (
+                  <LogOut className="h-4 w-4 mr-2" />
+                )}
+                {loggingOut ? "Logging out..." : "Logout"}
+              </Button>
+            </div>
           </div>
         </div>
 
@@ -359,13 +404,10 @@ export default function ProfilePage() {
                         <a href={`/gyms/${booking.gym.id}`}>View Gym</a>
                       </Button>
                       {booking.status === "CONFIRMED" && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="w-full sm:w-auto"
-                        >
-                          Download Card
-                        </Button>
+                        <DounloadButton
+                          booking={booking}
+                          buttonText={"Download Card"}
+                        />
                       )}
                     </div>
                   </CardContent>
