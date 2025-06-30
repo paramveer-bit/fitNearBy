@@ -147,7 +147,7 @@ export default function ListYourGymPage() {
                     </div>
                     <div className="text-right">
                       <div className="text-5xl font-bold text-green-600">
-                        $0
+                        Rs.0
                       </div>
                       <div className="text-lg text-gray-500">Forever</div>
                     </div>
