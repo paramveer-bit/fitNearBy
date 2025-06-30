@@ -16,7 +16,7 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import Image from "next/image";
-// import logo from "@/assets/GymLogo.svg";
+import logo from "@/assets/GymLogo.svg";
 import AuthDialog from "@/components/auth";
 
 export default function Navbar() {
@@ -34,7 +34,11 @@ export default function Navbar() {
         <div className="flex justify-between items-center h-16">
           <div className="flex items-center">
             <Link href="/" className="text-2xl font-bold text-primary">
-              <Image src={""} alt="Gym Logo" className="w-32 mt-3 h-16" />
+              <Image
+                src={logo || "/placeholder.svg"}
+                alt="Gym Logo"
+                className="w-32 mt-3 h-16"
+              />
             </Link>
           </div>
 
