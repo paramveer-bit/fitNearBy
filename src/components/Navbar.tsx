@@ -16,7 +16,7 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import Image from "next/image";
-import logo from "@/assets/GymLogo.svg";
+// import logo from "@/assets/GymLogo.svg";
 import AuthDialog from "@/components/auth";
 
 export default function Navbar() {
