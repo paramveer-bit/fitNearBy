@@ -119,7 +119,7 @@ export default function Navbar() {
               {/* Navigation Links */}
               <div className="space-y-2 mb-6">
                 <Link
-                  href="/"
+                  href="/home"
                   onClick={closeMenu}
                   className="flex items-center text-gray-900 hover:text-primary hover:bg-gray-50 px-4 py-3 rounded-lg text-base font-medium transition-colors"
                 >
@@ -127,7 +127,7 @@ export default function Navbar() {
                   Home
                 </Link>
                 <Link
-                  href="/gyms"
+                  href="/"
                   onClick={closeMenu}
                   className="flex items-center text-gray-900 hover:text-primary hover:bg-gray-50 px-4 py-3 rounded-lg text-base font-medium transition-colors"
                 >
