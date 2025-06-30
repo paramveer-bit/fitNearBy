@@ -135,7 +135,7 @@ function Hero() {
                       <MapPin className="w-6 h-6 text-cyan-400" />
                       <div className="flex-1">
                         <div className="text-white text-lg font-medium">
-                          New York, NY
+                          Faridabad
                         </div>
                         <div className="text-blue-200 text-sm">
                           15 gyms found nearby

@@ -16,6 +16,8 @@ import {
   Star,
   TrendingUp,
   Zap,
+  AlertCircle,
+  RefreshCw,
 } from "lucide-react";
 import GymCard from "@/components/home/gymCard";
 import {
@@ -34,9 +36,11 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { Card, CardContent } from "@/components/ui/card";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import axios from "axios";
 import type { GYM } from "@/types";
 import { toast } from "sonner";
+import LocationSuggestions from "@/components/location-suggestion";
 
 const allFacilities = [
   "Only Mens",
@@ -59,13 +63,26 @@ interface Filters {
   minRating: number;
 }
 
+interface LocationState {
+  lat: number | null;
+  lng: number | null;
+  accuracy: number | null;
+  error: string | null;
+  loading: boolean;
+  permissionDenied: boolean;
+}
+
 export default function GymsPage() {
   const [gyms, setGyms] = useState<GYM[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
-  const [userLocation, setUserLocation] = useState<{
-    lat: number;
-    lng: number;
-  } | null>(null);
+  const [locationState, setLocationState] = useState<LocationState>({
+    lat: null,
+    lng: null,
+    accuracy: null,
+    error: null,
+    loading: false,
+    permissionDenied: false,
+  });
   const [sortBy, setSortBy] = useState("distance");
   const [filters, setFilters] = useState<Filters>({
     priceRange: [0, 20000],
@@ -75,76 +92,268 @@ export default function GymsPage() {
   });
   const [activeFiltersCount, setActiveFiltersCount] = useState(0);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [manualLocation, setManualLocation] = useState("");
+  const [isSearching, setIsSearching] = useState(false);
+  const [showSuggestions, setShowSuggestions] = useState(false);
 
-  // Getting user location
-  useEffect(() => {
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          setUserLocation({
-            lat: position.coords.latitude,
-            lng: position.coords.longitude,
-          });
-        },
-        (error) => {
-          console.log("Error getting location:", error);
+  // Enhanced geolocation function
+  const getCurrentLocation = async (): Promise<void> => {
+    if (!navigator.geolocation) {
+      setLocationState((prev) => ({
+        ...prev,
+        error: "Geolocation is not supported by this browser",
+        loading: false,
+      }));
+      toast.error("Geolocation is not supported by this browser");
+      return;
+    }
+
+    setLocationState((prev) => ({ ...prev, loading: true, error: null }));
+
+    // Check permission first
+    try {
+      const permission = await navigator.permissions.query({
+        name: "geolocation",
+      });
+
+      if (permission.state === "denied") {
+        setLocationState((prev) => ({
+          ...prev,
+          loading: false,
+          permissionDenied: true,
+          error:
+            "Location permission denied. Please enable location access in your browser settings.",
+        }));
+        toast.error("Location permission denied");
+        return;
+      }
+    } catch (error) {
+      console.error("Permission API not supported:", error);
+      console.log("Permission API not supported, proceeding with geolocation");
+    }
+
+    const options: PositionOptions = {
+      enableHighAccuracy: true, // Use GPS if available
+      timeout: 15000, // 15 seconds timeout
+      maximumAge: 300000, // Accept cached position up to 5 minutes old
+    };
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const { latitude, longitude, accuracy } = position.coords;
+
+        setLocationState({
+          lat: latitude,
+          lng: longitude,
+          accuracy: accuracy,
+          error: null,
+          loading: false,
+          permissionDenied: false,
+        });
+
+        toast.success(`Location found with ${Math.round(accuracy)}m accuracy`);
+      },
+      (error) => {
+        let errorMessage = "Failed to get location";
+        let permissionDenied = false;
+
+        switch (error.code) {
+          case error.PERMISSION_DENIED:
+            errorMessage =
+              "Location permission denied. Please enable location access.";
+            permissionDenied = true;
+            break;
+          case error.POSITION_UNAVAILABLE:
+            errorMessage =
+              "Location information unavailable. Please try again.";
+            break;
+          case error.TIMEOUT:
+            errorMessage = "Location request timed out. Please try again.";
+            break;
+          default:
+            errorMessage = "An unknown error occurred while getting location.";
+            break;
+        }
+
+        setLocationState((prev) => ({
+          ...prev,
+          error: errorMessage,
+          loading: false,
+          permissionDenied,
+        }));
+
+        toast.error(errorMessage);
+      },
+      options
+    );
+  };
+
+  // Add this function after the getCurrentLocation function
+  const searchByLocation = async (locationQuery: string): Promise<void> => {
+    if (!locationQuery.trim()) {
+      toast.error("Please enter a location to search");
+      return;
+    }
+
+    setIsSearching(true);
+
+    try {
+      // First, try to geocode the location using a geocoding service
+      // For this example, I'll use a simple approach with OpenStreetMap Nominatim
+      const geocodeResponse = await fetch(
+        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(
+          locationQuery
+        )}&limit=1`
+      );
+
+      if (!geocodeResponse.ok) {
+        throw new Error("Failed to geocode location");
+      }
+
+      const geocodeData = await geocodeResponse.json();
+
+      if (geocodeData.length === 0) {
+        toast.error("Location not found. Please try a different search term.");
+        setIsSearching(false);
+        return;
+      }
+
+      const { lat, lon } = geocodeData[0];
+      const latitude = Number.parseFloat(lat);
+      const longitude = Number.parseFloat(lon);
+
+      // Update location state with the geocoded coordinates
+      setLocationState({
+        lat: latitude,
+        lng: longitude,
+        accuracy: null, // No accuracy info from geocoding
+        error: null,
+        loading: false,
+        permissionDenied: false,
+      });
+
+      // Fetch gyms based on the geocoded location
+      const res = await axios.get(
+        `${process.env.NEXT_PUBLIC_BASEURL}/gym/location/getGyms`,
+        {
+          params: {
+            latitude: latitude,
+            longitude: longitude,
+          },
         }
       );
+
+      setGyms(res.data.data);
+      toast.success(
+        `Found ${res.data.data.length} gyms near "${locationQuery}"`
+      );
+    } catch (error: unknown) {
+      console.error("Search error:", error);
+
+      // Fallback: fetch all gyms if location search fails
+      try {
+        const res = await axios.get(`${process.env.NEXT_PUBLIC_BASEURL}/gym`);
+        setGyms(res.data.data);
+        toast.warning(
+          "Couldn't find specific location. Showing all gyms instead."
+        );
+      } catch (fallbackError) {
+        if (axios.isAxiosError(fallbackError) && fallbackError.response) {
+          toast.error(fallbackError.response.data.message);
+        } else {
+          toast.error("Failed to fetch gyms. Please try again.");
+        }
+      }
+    } finally {
+      setIsSearching(false);
     }
+  };
+
+  // Add handler for search button click
+  const handleSearchClick = () => {
+    if (manualLocation.trim()) {
+      searchByLocation(manualLocation);
+    } else {
+      // If no manual location, try to get current location
+      getCurrentLocation();
+    }
+  };
+
+  // Add this function to handle suggestion selection
+  const handleLocationSelect = (
+    locationName: string,
+    lat: number,
+    lng: number
+  ) => {
+    setManualLocation(locationName);
+    setShowSuggestions(false);
+
+    // Update location state
+    setLocationState({
+      lat: lat,
+      lng: lng,
+      accuracy: null,
+      error: null,
+      loading: false,
+      permissionDenied: false,
+    });
+
+    // Fetch gyms for this location
+    searchByLocation(locationName);
+  };
+
+  // Request location on component mount
+  useEffect(() => {
+    getCurrentLocation();
   }, []);
 
   // Count active filters
   useEffect(() => {
     let count = 0;
-    if (filters.priceRange[0] > 0 || filters.priceRange[1] < 100) count++;
+    if (filters.priceRange[0] > 0 || filters.priceRange[1] < 20000) count++;
     if (filters.maxDistance < 10) count++;
     if (filters.facilities.length > 0) count++;
+    if (filters.minRating > 0) count++;
     setActiveFiltersCount(count);
   }, [filters]);
 
+  // Fetch gyms based on location
   useEffect(() => {
-    if (!userLocation) {
-      const fetchGyms = async () => {
-        try {
-          const res = await axios.get(`${process.env.NEXT_PUBLIC_BASEURL}/gym`);
-          setGyms(res.data.data); // Duplicate data to simulate more gyms
-        } catch (error: unknown) {
-          if (axios.isAxiosError(error) && error.response) {
-            // Show exactly the backend's message
-            toast.error(error.response.data.message);
-          } else {
-            // Fallback for network/CORS/unexpected errors
-            toast.error("An unexpected error occurred");
-          }
-        }
-      };
-      fetchGyms();
-    } else {
-      const fetchGyms = async () => {
-        try {
-          const res = await axios.get(
+    const fetchGyms = async () => {
+      try {
+        let res;
+
+        if (locationState.lat && locationState.lng) {
+          // Fetch gyms with location
+          res = await axios.get(
             `${process.env.NEXT_PUBLIC_BASEURL}/gym/location/getGyms`,
             {
               params: {
-                latitude: userLocation.lat,
-                longitude: userLocation.lng,
+                latitude: locationState.lat,
+                longitude: locationState.lng,
               },
             }
           );
-          setGyms(res.data.data);
-        } catch (error: unknown) {
-          if (axios.isAxiosError(error) && error.response) {
-            // Show exactly the backend's message
-            toast.error(error.response.data.message);
-          } else {
-            // Fallback for network/CORS/unexpected errors
-            toast.error("An unexpected error occurred");
-          }
+        } else {
+          // Fetch all gyms without location
+          res = await axios.get(`${process.env.NEXT_PUBLIC_BASEURL}/gym`);
         }
-      };
+
+        setGyms(res.data.data);
+      } catch (error: unknown) {
+        if (axios.isAxiosError(error) && error.response) {
+          toast.error(error.response.data.message);
+        } else {
+          toast.error("An unexpected error occurred while fetching gyms");
+        }
+      }
+    };
+
+    // Only fetch gyms if we have location or if location failed
+    if ((locationState.lat && locationState.lng) || locationState.error) {
       fetchGyms();
     }
-  }, [userLocation]);
+  }, [locationState.lat, locationState.lng, locationState.error]);
 
   const applyFilters = (gyms: GYM[]) => {
     return gyms.filter((gym) => {
@@ -160,7 +369,7 @@ export default function GymsPage() {
         return false;
       }
 
-      if (gym.distance > filters.maxDistance) {
+      if (gym.distance && gym.distance > filters.maxDistance) {
         return false;
       }
 
@@ -189,6 +398,9 @@ export default function GymsPage() {
   const sortedGyms: GYM[] = [...filteredGyms].sort((a, b) => {
     switch (sortBy) {
       case "distance":
+        if (!a.distance && !b.distance) return 0;
+        if (!a.distance) return 1;
+        if (!b.distance) return -1;
         return a.distance - b.distance;
       case "rating":
         return b.rating - a.rating;
@@ -204,7 +416,7 @@ export default function GymsPage() {
 
   const clearAllFilters = () => {
     setFilters({
-      priceRange: [0, 100],
+      priceRange: [0, 20000],
       minRating: 0,
       maxDistance: 10,
       facilities: [],
@@ -280,9 +492,9 @@ export default function GymsPage() {
                 priceRange: value as [number, number],
               }))
             }
-            max={100}
+            max={20000}
             min={0}
-            step={5}
+            step={100}
             className="w-full [&_[role=slider]]:bg-green-600 [&_[role=slider]]:border-green-600"
           />
         </CardContent>
@@ -340,7 +552,7 @@ export default function GymsPage() {
             onValueChange={(value) =>
               setFilters((prev) => ({ ...prev, maxDistance: value[0] }))
             }
-            max={10}
+            max={50}
             min={0.5}
             step={0.5}
             className="w-full [&_[role=slider]]:bg-purple-600 [&_[role=slider]]:border-purple-600"
@@ -398,24 +610,15 @@ export default function GymsPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-blue-50">
       {/* Hero Section */}
-
       <section className="relative overflow-hidden bg-gradient-to-br from-black via-gray-800 to-gray-600">
-        {/* Background Pattern */}
-
-        {/* <div className="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg width="60\" height="60" viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg"%3E%3Cg fill="none" fillRule="evenodd"%3E%3Cg fill="%23ffffff" fillOpacity="0.05"%3E%3Ccircle cx="30" cy="30" r="2"/%3E%3C/g%3E%3C/g%3E%3C/svg%3E')] opacity-20">
-
-        </div> */}
-
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16 lg:py-24">
           <div className="text-center">
             <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm border border-white/20 rounded-full px-4 py-2 mb-6">
               <Zap className="h-4 w-4 text-yellow-400" />
-
               <span className="text-sm font-medium text-white">
                 Find Your Perfect Fitness Match
               </span>
             </div>
-
             <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold mb-6 bg-gradient-to-r from-white via-blue-100 to-indigo-200 bg-clip-text text-transparent">
               Discover Amazing
               <br />
@@ -423,30 +626,73 @@ export default function GymsPage() {
                 Gyms Near You
               </span>
             </h1>
-
             <p className="text-lg sm:text-xl lg:text-2xl mb-8 text-blue-100 max-w-3xl mx-auto leading-relaxed">
               Transform your fitness journey with premium gyms, expert trainers,
               and state-of-the-art facilities
             </p>
 
             {/* Enhanced Search Bar */}
-
             <div className="max-w-4xl mx-auto">
               <Card className="border-0 shadow-2xl bg-white/95 backdrop-blur-sm">
                 <CardContent className="p-6">
                   <div className="flex flex-col sm:flex-row gap-4">
                     <div className="relative flex-1">
-                      <MapPin className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-
+                      <MapPin className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5 z-10" />
                       <Input
-                        placeholder="Enter your location"
-                        className="pl-12 h-14 text-lg border-gray-200 focus:border-blue-500 focus:ring-blue-500/20 bg-white"
+                        placeholder={
+                          locationState.loading
+                            ? "Getting your location..."
+                            : locationState.lat && locationState.lng
+                            ? `Location: ${
+                                manualLocation || "Current location"
+                              }`
+                            : "Enter city, address, or area"
+                        }
+                        value={manualLocation}
+                        onChange={(e) => {
+                          setManualLocation(e.target.value);
+                          setShowSuggestions(true);
+                        }}
+                        onFocus={() => setShowSuggestions(true)}
+                        onBlur={() => {
+                          // Delay hiding suggestions to allow clicks
+                          setTimeout(() => setShowSuggestions(false), 200);
+                        }}
+                        onKeyPress={(e) => {
+                          if (e.key === "Enter") {
+                            setShowSuggestions(false);
+                            handleSearchClick();
+                          }
+                        }}
+                        className="pl-12 pr-10 h-14 text-lg border-gray-200 focus:border-blue-500 focus:ring-blue-500/20 bg-white"
+                        disabled={locationState.loading || isSearching}
+                      />
+                      {manualLocation && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            setManualLocation("");
+                            setShowSuggestions(false);
+                            getCurrentLocation();
+                          }}
+                          className="absolute right-2 top-1/2 transform -translate-y-1/2 h-8 w-8 p-0 hover:bg-gray-100 z-10"
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      )}
+                      {(locationState.loading || isSearching) && (
+                        <RefreshCw className="absolute right-10 top-1/2 transform -translate-y-1/2 text-blue-500 w-5 h-5 animate-spin z-10" />
+                      )}
+
+                      <LocationSuggestions
+                        query={manualLocation}
+                        onSelect={handleLocationSelect}
+                        isVisible={showSuggestions}
                       />
                     </div>
-
                     <div className="relative flex-1">
                       <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-
                       <Input
                         placeholder="Search gyms, trainers, classes..."
                         value={searchTerm}
@@ -454,13 +700,23 @@ export default function GymsPage() {
                         className="pl-12 h-14 text-lg border-gray-200 focus:border-blue-500 focus:ring-blue-500/20 bg-white"
                       />
                     </div>
-
                     <Button
                       size="lg"
-                      className="h-14 px-8 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-200 w-full sm:w-auto"
+                      onClick={handleSearchClick}
+                      disabled={locationState.loading || isSearching}
+                      className="h-14 px-8 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-200 w-full sm:w-auto disabled:opacity-50"
                     >
-                      <Search className="h-5 w-5 mr-2" />
-                      Search
+                      {isSearching ? (
+                        <>
+                          <RefreshCw className="h-5 w-5 mr-2 animate-spin" />
+                          Searching...
+                        </>
+                      ) : (
+                        <>
+                          <Search className="h-5 w-5 mr-2" />
+                          Search
+                        </>
+                      )}
                     </Button>
                   </div>
                 </CardContent>
@@ -470,18 +726,70 @@ export default function GymsPage() {
         </div>
       </section>
 
+      {/* Location Status Alert */}
+      {(locationState.error || locationState.loading) && (
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          <Alert
+            className={
+              locationState.error
+                ? "border-red-200 bg-red-50"
+                : "border-blue-200 bg-blue-50"
+            }
+          >
+            <AlertCircle
+              className={`h-4 w-4 ${
+                locationState.error ? "text-red-600" : "text-blue-600"
+              }`}
+            />
+            <AlertDescription className="flex items-center justify-between">
+              <span
+                className={
+                  locationState.error ? "text-red-800" : "text-blue-800"
+                }
+              >
+                {locationState.loading
+                  ? "Getting your location for better results..."
+                  : locationState.error}
+              </span>
+              {locationState.error && !locationState.loading && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={getCurrentLocation}
+                  className="ml-4 border-blue-300 text-blue-700 hover:bg-blue-100 bg-transparent"
+                >
+                  <RefreshCw className="h-4 w-4 mr-1" />
+                  Retry
+                </Button>
+              )}
+            </AlertDescription>
+          </Alert>
+        </div>
+      )}
+
+      {/* Location Accuracy Info */}
+      {locationState.lat && locationState.lng && locationState.accuracy && (
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2">
+          <div className="text-center">
+            <Badge
+              variant="secondary"
+              className="bg-green-100 text-green-800 border-green-200"
+            >
+              📍 Location accuracy: ±{Math.round(locationState.accuracy)}m
+            </Badge>
+          </div>
+        </div>
+      )}
+
       <div className="flex flex-col lg:flex-row">
         {/* Desktop Filter Sidebar */}
-
         <div className="hidden lg:block w-96 bg-white/80 backdrop-blur-sm border-r border-gray-200 p-6 overflow-y-auto max-h-screen sticky top-0">
           <FilterContent />
         </div>
 
         {/* Main Content */}
-
         <div className="flex-1 p-4 sm:p-6 lg:p-8">
           {/* Mobile Filter Controls */}
-
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8 lg:hidden">
             <div className="flex items-center gap-3">
               <Sheet open={isFilterOpen} onOpenChange={setIsFilterOpen}>
@@ -491,9 +799,7 @@ export default function GymsPage() {
                     className="flex items-center gap-2 h-10 px-4 border-2 hover:border-blue-300 hover:bg-blue-50 bg-transparent"
                   >
                     <SlidersHorizontal className="h-4 w-4" />
-
                     <span className="font-medium">Filters</span>
-
                     {activeFiltersCount > 0 && (
                       <Badge className="ml-1 bg-blue-600 hover:bg-blue-700 text-xs">
                         {activeFiltersCount}
@@ -501,7 +807,6 @@ export default function GymsPage() {
                     )}
                   </Button>
                 </SheetTrigger>
-
                 <SheetContent
                   side="left"
                   className="w-96 overflow-y-auto bg-white"
@@ -510,34 +815,27 @@ export default function GymsPage() {
                     <SheetTitle className="text-xl font-bold">
                       Filter Gyms
                     </SheetTitle>
-
                     <SheetDescription className="text-gray-600">
                       Refine your search to find the perfect gym for your
                       fitness journey.
                     </SheetDescription>
                   </SheetHeader>
-
                   <FilterContent />
                 </SheetContent>
               </Sheet>
 
               {/* Mobile Sort */}
-
               <div className="flex items-center gap-2 border border-gray-200 rounded-lg px-3 py-2">
                 <Label className="text-sm font-medium whitespace-nowrap text-gray-700">
                   Sort:
                 </Label>
-
                 <Select value={sortBy} onValueChange={setSortBy}>
                   <SelectTrigger className="w-28 h-6 border-0 focus:ring-0 text-sm">
                     <SelectValue />
                   </SelectTrigger>
-
                   <SelectContent>
                     <SelectItem value="distance">📍 Distance</SelectItem>
-
                     <SelectItem value="rating">⭐ Rating</SelectItem>
-
                     <SelectItem value="price">💰 Price</SelectItem>
                   </SelectContent>
                 </Select>
@@ -546,7 +844,6 @@ export default function GymsPage() {
           </div>
 
           {/* Active Filters Display */}
-
           {activeFiltersCount > 0 && (
             <Card className="mb-8 border-blue-200 bg-blue-50/50">
               <CardContent className="p-4">
@@ -559,25 +856,22 @@ export default function GymsPage() {
                     {activeFiltersCount} Active Filter
                     {activeFiltersCount !== 1 ? "s" : ""}
                   </Badge>
-
-                  {filters.priceRange[0] > 0 || filters.priceRange[1] < 100 ? (
+                  {filters.priceRange[0] > 0 ||
+                  filters.priceRange[1] < 20000 ? (
                     <Badge className="bg-green-600 hover:bg-green-700">
                       💰 ${filters.priceRange[0]} - ${filters.priceRange[1]}
                     </Badge>
                   ) : null}
-
                   {filters.minRating > 0 && (
                     <Badge className="bg-yellow-600 hover:bg-yellow-700">
                       ⭐ {filters.minRating}+ stars
                     </Badge>
                   )}
-
                   {filters.maxDistance < 10 && (
                     <Badge className="bg-purple-600 hover:bg-purple-700">
                       📍 ≤ {filters.maxDistance} km
                     </Badge>
                   )}
-
                   {filters.facilities.map((facility) => (
                     <Badge
                       key={facility}
@@ -591,8 +885,7 @@ export default function GymsPage() {
             </Card>
           )}
 
-          {/* Results Header - Hidden on mobile */}
-
+          {/* Results Header */}
           <div className="mb-8 hidden sm:block">
             <Card className="border-0 shadow-sm bg-gradient-to-r from-white to-gray-50">
               <CardContent className="p-6">
@@ -602,7 +895,6 @@ export default function GymsPage() {
                       {sortedGyms.length} Gym
                       {sortedGyms.length !== 1 ? "s" : ""} Found
                     </h2>
-
                     <p className="text-gray-600">
                       Discover the best fitness centers in your area
                       {activeFiltersCount > 0 && (
@@ -613,7 +905,6 @@ export default function GymsPage() {
                       )}
                     </p>
                   </div>
-
                   <div className="hidden sm:flex items-center gap-2 text-sm text-gray-500">
                     <TrendingUp className="h-4 w-4" />
                     Sorted by {sortBy}
@@ -624,7 +915,6 @@ export default function GymsPage() {
           </div>
 
           {/* Gym Cards Grid */}
-
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-2 2xl:grid-cols-2 gap-6 lg:gap-8">
             {sortedGyms.map((gym) => (
               <div
@@ -637,23 +927,19 @@ export default function GymsPage() {
           </div>
 
           {/* No Results */}
-
-          {sortedGyms.length === 0 && (
+          {sortedGyms.length === 0 && !locationState.loading && (
             <Card className="border-0 shadow-lg bg-gradient-to-br from-gray-50 to-white">
               <CardContent className="p-12 text-center">
                 <div className="w-20 h-20 bg-gradient-to-br from-gray-200 to-gray-300 rounded-full flex items-center justify-center mx-auto mb-6">
                   <Search className="h-8 w-8 text-gray-500" />
                 </div>
-
                 <h3 className="text-2xl font-bold text-gray-900 mb-4">
                   No gyms found
                 </h3>
-
                 <p className="text-gray-600 mb-8 max-w-md mx-auto">
                   We couldn&apos;t find any gyms matching your search criteria.
                   Try adjusting your filters or search terms.
                 </p>
-
                 <div className="flex flex-col sm:flex-row gap-3 justify-center">
                   <Button
                     variant="outline"
@@ -662,7 +948,6 @@ export default function GymsPage() {
                   >
                     Clear Search
                   </Button>
-
                   {activeFiltersCount > 0 && (
                     <Button
                       onClick={clearAllFilters}
@@ -682,19 +967,14 @@ export default function GymsPage() {
         .custom-scrollbar::-webkit-scrollbar {
           width: 6px;
         }
-
         .custom-scrollbar::-webkit-scrollbar-track {
           background: #f1f5f9;
-
           border-radius: 3px;
         }
-
         .custom-scrollbar::-webkit-scrollbar-thumb {
           background: #cbd5e1;
-
           border-radius: 3px;
         }
-
         .custom-scrollbar::-webkit-scrollbar-thumb:hover {
           background: #94a3b8;
         }
