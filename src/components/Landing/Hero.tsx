@@ -64,7 +64,7 @@ function Hero() {
                 asChild
                 className="group bg-gradient-to-r from-cyan-500 via-blue-600 to-indigo-600 hover:from-cyan-600 hover:via-blue-700 hover:to-indigo-700 text-white px-12 py-10 text-2xl rounded-full shadow-2xl hover:shadow-cyan-500/30 transition-all duration-500 hover:scale-110 border-2 border-white/20"
               >
-                <Link href="/gyms" className="flex items-center">
+                <Link href="/" className="flex items-center">
                   <Zap className="mr-4 h-8 w-8 group-hover:animate-pulse" />
                   Explore Gyms Now
                   <ArrowRight className="ml-4 h-8 w-8 group-hover:translate-x-3 transition-transform duration-300" />
@@ -182,7 +182,7 @@ function Hero() {
                   </div>
 
                   {/* Action Button */}
-                  <Link href="/gyms" className="flex items-center">
+                  <Link href="/" className="flex items-center">
                     <Button className="w-full bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-700 hover:to-blue-700 text-white py-6 rounded-2xl font-bold text-xl shadow-lg hover:shadow-xl transition-all duration-300 border border-white/20">
                       <Clock className="mr-3 h-6 w-6" />
                       Start Exploring

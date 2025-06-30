@@ -1,461 +1,704 @@
-import Link from "next/link";
+"use client";
+
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
+import { Slider } from "@/components/ui/slider";
 import {
   MapPin,
+  Search,
+  X,
+  SlidersHorizontal,
+  Filter,
   Star,
-  Users,
-  Dumbbell,
-  Shield,
-  Zap,
-  ArrowRight,
-  CheckCircle,
-  Trophy,
-  Heart,
-  Target,
-  Sparkles,
   TrendingUp,
-  Clock,
-  Calendar,
-  Award,
-  Smartphone,
+  Zap,
 } from "lucide-react";
-import Image from "next/image";
-import Hero from "@/components/Landing/Hero";
-import home from "@/assets/home.jpeg"; // Adjust the path as necessary
-import ImageCarousel from "@/components/Landing/image-carousel";
+import GymCard from "@/components/home/gymCard";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
+import { Card, CardContent } from "@/components/ui/card";
+import axios from "axios";
+import type { GYM } from "@/types";
+import { toast } from "sonner";
 
-export default function HomePage() {
+const allFacilities = [
+  "Only Mens",
+  "Only Womens",
+  "Unisex",
+  "Cardio Equipment",
+  "Weight Training",
+  "Group Classes",
+  "Swimming Pool",
+  "Personal Training",
+  "Yoga Studio",
+  "Locker Rooms",
+  "Nutrition Counseling",
+];
+
+interface Filters {
+  priceRange: [number, number];
+  maxDistance: number;
+  facilities: string[];
+  minRating: number;
+}
+
+export default function GymsPage() {
+  const [gyms, setGyms] = useState<GYM[]>([]);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [userLocation, setUserLocation] = useState<{
+    lat: number;
+    lng: number;
+  } | null>(null);
+  const [sortBy, setSortBy] = useState("distance");
+  const [filters, setFilters] = useState<Filters>({
+    priceRange: [0, 20000],
+    maxDistance: 10,
+    minRating: 0,
+    facilities: [],
+  });
+  const [activeFiltersCount, setActiveFiltersCount] = useState(0);
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
+
+  // Getting user location
+  useEffect(() => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setUserLocation({
+            lat: position.coords.latitude,
+            lng: position.coords.longitude,
+          });
+        },
+        (error) => {
+          console.log("Error getting location:", error);
+        }
+      );
+    }
+  }, []);
+
+  // Count active filters
+  useEffect(() => {
+    let count = 0;
+    if (filters.priceRange[0] > 0 || filters.priceRange[1] < 100) count++;
+    if (filters.maxDistance < 10) count++;
+    if (filters.facilities.length > 0) count++;
+    setActiveFiltersCount(count);
+  }, [filters]);
+
+  useEffect(() => {
+    if (!userLocation) {
+      const fetchGyms = async () => {
+        try {
+          const res = await axios.get(`${process.env.NEXT_PUBLIC_BASEURL}/gym`);
+          setGyms(res.data.data); // Duplicate data to simulate more gyms
+        } catch (error: unknown) {
+          if (axios.isAxiosError(error) && error.response) {
+            // Show exactly the backend's message
+            toast.error(error.response.data.message);
+          } else {
+            // Fallback for network/CORS/unexpected errors
+            toast.error("An unexpected error occurred");
+          }
+        }
+      };
+      fetchGyms();
+    } else {
+      const fetchGyms = async () => {
+        try {
+          const res = await axios.get(
+            `${process.env.NEXT_PUBLIC_BASEURL}/gym/location/getGyms`,
+            {
+              params: {
+                latitude: userLocation.lat,
+                longitude: userLocation.lng,
+              },
+            }
+          );
+          setGyms(res.data.data);
+        } catch (error: unknown) {
+          if (axios.isAxiosError(error) && error.response) {
+            // Show exactly the backend's message
+            toast.error(error.response.data.message);
+          } else {
+            // Fallback for network/CORS/unexpected errors
+            toast.error("An unexpected error occurred");
+          }
+        }
+      };
+      fetchGyms();
+    }
+  }, [userLocation]);
+
+  const applyFilters = (gyms: GYM[]) => {
+    return gyms.filter((gym) => {
+      const minPrice = Math.min(...gym.Plans.map((p) => p.newprice));
+      if (
+        minPrice < filters.priceRange[0] ||
+        minPrice > filters.priceRange[1]
+      ) {
+        return false;
+      }
+
+      if (gym.rating < filters.minRating) {
+        return false;
+      }
+
+      if (gym.distance > filters.maxDistance) {
+        return false;
+      }
+
+      if (filters.facilities.length > 0) {
+        const hasAllFacilities = filters.facilities.every((facility) =>
+          gym.Facilities.map((f) => f.name).includes(facility)
+        );
+        if (!hasAllFacilities) {
+          return false;
+        }
+      }
+
+      return true;
+    });
+  };
+
+  const filteredGyms = applyFilters(
+    gyms.filter(
+      (gym) =>
+        gym.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        gym.location.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        gym.address.toLowerCase().includes(searchTerm.toLowerCase())
+    )
+  );
+
+  const sortedGyms: GYM[] = [...filteredGyms].sort((a, b) => {
+    switch (sortBy) {
+      case "distance":
+        return a.distance - b.distance;
+      case "rating":
+        return b.rating - a.rating;
+      case "price":
+        return (
+          Math.min(...a.Plans.map((p) => p.newprice)) -
+          Math.min(...b.Plans.map((p) => p.newprice))
+        );
+      default:
+        return 0;
+    }
+  });
+
+  const clearAllFilters = () => {
+    setFilters({
+      priceRange: [0, 100],
+      minRating: 0,
+      maxDistance: 10,
+      facilities: [],
+    });
+  };
+
+  const toggleFacility = (facility: string) => {
+    setFilters((prev) => ({
+      ...prev,
+      facilities: prev.facilities.includes(facility)
+        ? prev.facilities.filter((f) => f !== facility)
+        : [...prev.facilities, facility],
+    }));
+  };
+
+  // Filter content component
+  const FilterContent = () => (
+    <div className="space-y-8">
+      <div className="flex items-center gap-3">
+        <div className="p-2 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg">
+          <Filter className="h-5 w-5 text-white" />
+        </div>
+        <div>
+          <h2 className="text-xl font-bold text-gray-900">Filters</h2>
+          <p className="text-sm text-gray-500">Refine your search</p>
+        </div>
+      </div>
+
+      {/* Sort By */}
+      <Card className="border-0 shadow-sm bg-gradient-to-br from-gray-50 to-white">
+        <CardContent className="p-4 space-y-3">
+          <div className="flex items-center gap-2">
+            <TrendingUp className="h-4 w-4 text-blue-600" />
+            <Label className="text-sm font-semibold text-gray-900">
+              Sort By
+            </Label>
+          </div>
+          <Select value={sortBy} onValueChange={setSortBy}>
+            <SelectTrigger className="border-gray-200 focus:border-blue-500 focus:ring-blue-500/20">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="distance">📍 Distance</SelectItem>
+              <SelectItem value="rating">⭐ Rating</SelectItem>
+              <SelectItem value="price">💰 Price</SelectItem>
+            </SelectContent>
+          </Select>
+        </CardContent>
+      </Card>
+
+      {/* Price Range */}
+      <Card className="border-0 shadow-sm bg-gradient-to-br from-green-50 to-white">
+        <CardContent className="p-4 space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span className="text-lg">💰</span>
+              <Label className="text-sm font-semibold text-gray-900">
+                Price Range
+              </Label>
+            </div>
+            <Badge
+              variant="secondary"
+              className="bg-green-100 text-green-800 border-green-200"
+            >
+              ${filters.priceRange[0]} - ${filters.priceRange[1]}
+            </Badge>
+          </div>
+          <Slider
+            value={filters.priceRange}
+            onValueChange={(value) =>
+              setFilters((prev) => ({
+                ...prev,
+                priceRange: value as [number, number],
+              }))
+            }
+            max={100}
+            min={0}
+            step={5}
+            className="w-full [&_[role=slider]]:bg-green-600 [&_[role=slider]]:border-green-600"
+          />
+        </CardContent>
+      </Card>
+
+      {/* Minimum Rating */}
+      <Card className="border-0 shadow-sm bg-gradient-to-br from-yellow-50 to-white">
+        <CardContent className="p-4 space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Star className="h-4 w-4 text-yellow-500 fill-current" />
+              <Label className="text-sm font-semibold text-gray-900">
+                Minimum Rating
+              </Label>
+            </div>
+            <Badge
+              variant="secondary"
+              className="bg-yellow-100 text-yellow-800 border-yellow-200"
+            >
+              {filters.minRating > 0 ? `${filters.minRating}+ ⭐` : "Any"}
+            </Badge>
+          </div>
+          <Slider
+            value={[filters.minRating]}
+            onValueChange={(value) =>
+              setFilters((prev) => ({ ...prev, minRating: value[0] }))
+            }
+            max={5}
+            min={0}
+            step={0.1}
+            className="w-full [&_[role=slider]]:bg-yellow-500 [&_[role=slider]]:border-yellow-500"
+          />
+        </CardContent>
+      </Card>
+
+      {/* Maximum Distance */}
+      <Card className="border-0 shadow-sm bg-gradient-to-br from-purple-50 to-white">
+        <CardContent className="p-4 space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <MapPin className="h-4 w-4 text-purple-600" />
+              <Label className="text-sm font-semibold text-gray-900">
+                Max Distance
+              </Label>
+            </div>
+            <Badge
+              variant="secondary"
+              className="bg-purple-100 text-purple-800 border-purple-200"
+            >
+              {filters.maxDistance < 10 ? `${filters.maxDistance} km` : "Any"}
+            </Badge>
+          </div>
+          <Slider
+            value={[filters.maxDistance]}
+            onValueChange={(value) =>
+              setFilters((prev) => ({ ...prev, maxDistance: value[0] }))
+            }
+            max={10}
+            min={0.5}
+            step={0.5}
+            className="w-full [&_[role=slider]]:bg-purple-600 [&_[role=slider]]:border-purple-600"
+          />
+        </CardContent>
+      </Card>
+
+      {/* Facilities */}
+      <Card className="border-0 shadow-sm bg-gradient-to-br from-blue-50 to-white">
+        <CardContent className="p-4 space-y-4">
+          <div className="flex items-center gap-2">
+            <Zap className="h-4 w-4 text-blue-600" />
+            <Label className="text-sm font-semibold text-gray-900">
+              Required Facilities
+            </Label>
+          </div>
+          <div className="space-y-3 max-h-64 overflow-y-auto custom-scrollbar">
+            {allFacilities.map((facility) => (
+              <div
+                key={facility}
+                className="flex items-center space-x-3 p-2 rounded-lg hover:bg-blue-50/50 transition-colors"
+              >
+                <Checkbox
+                  id={facility}
+                  checked={filters.facilities.includes(facility)}
+                  onCheckedChange={() => toggleFacility(facility)}
+                  className="border-blue-300 data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600"
+                />
+                <Label
+                  htmlFor={facility}
+                  className="text-sm font-medium cursor-pointer flex-1"
+                >
+                  {facility}
+                </Label>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Clear Filters */}
+      {activeFiltersCount > 0 && (
+        <Button
+          variant="outline"
+          onClick={clearAllFilters}
+          className="w-full h-12 border-2 border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300 font-semibold bg-transparent"
+        >
+          <X className="h-4 w-4 mr-2" />
+          Clear All Filters ({activeFiltersCount})
+        </Button>
+      )}
+    </div>
+  );
+
   return (
-    <div className="min-h-screen overflow-hidden">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-blue-50">
       {/* Hero Section */}
-      <Hero />
 
-      {/* Image Carousel Section */}
-      <ImageCarousel />
-
-      {/* Features Section */}
-      <section className="py-24 bg-gradient-to-br from-slate-50 via-blue-50/30 to-purple-50/30 relative overflow-hidden">
+      <section className="relative overflow-hidden bg-gradient-to-br from-black via-gray-800 to-gray-600">
         {/* Background Pattern */}
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(59,130,246,0.1),transparent_50%)] pointer-events-none"></div>
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_80%,rgba(147,51,234,0.1),transparent_50%)] pointer-events-none"></div>
 
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
-          <div className="text-center mb-20">
-            <div className="inline-flex items-center bg-gradient-to-r from-blue-600/10 to-purple-600/10 rounded-full px-6 py-3 mb-6 border border-blue-200/50 backdrop-blur-sm">
-              <Sparkles className="w-5 h-5 text-blue-600 mr-2" />
-              <span className="text-blue-700 font-semibold">
-                Why Choose FitNearBy
+        {/* <div className="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg width="60\" height="60" viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg"%3E%3Cg fill="none" fillRule="evenodd"%3E%3Cg fill="%23ffffff" fillOpacity="0.05"%3E%3Ccircle cx="30" cy="30" r="2"/%3E%3C/g%3E%3C/g%3E%3C/svg%3E')] opacity-20">
+
+        </div> */}
+
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16 lg:py-24">
+          <div className="text-center">
+            <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm border border-white/20 rounded-full px-4 py-2 mb-6">
+              <Zap className="h-4 w-4 text-yellow-400" />
+
+              <span className="text-sm font-medium text-white">
+                Find Your Perfect Fitness Match
               </span>
             </div>
-            <h2 className="text-5xl md:text-6xl font-bold text-gray-900 mb-8 leading-tight">
-              Your Fitness Journey
+
+            <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold mb-6 bg-gradient-to-r from-white via-blue-100 to-indigo-200 bg-clip-text text-transparent">
+              Discover Amazing
               <br />
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600">
-                Starts Here
+              <span className="bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
+                Gyms Near You
               </span>
-            </h2>
-            <p className="text-xl text-gray-600 max-w-4xl mx-auto leading-relaxed">
-              Experience the future of gym booking with our intelligent platform
-              that connects you to premium fitness facilities
+            </h1>
+
+            <p className="text-lg sm:text-xl lg:text-2xl mb-8 text-blue-100 max-w-3xl mx-auto leading-relaxed">
+              Transform your fitness journey with premium gyms, expert trainers,
+              and state-of-the-art facilities
             </p>
+
+            {/* Enhanced Search Bar */}
+
+            <div className="max-w-4xl mx-auto">
+              <Card className="border-0 shadow-2xl bg-white/95 backdrop-blur-sm">
+                <CardContent className="p-6">
+                  <div className="flex flex-col sm:flex-row gap-4">
+                    <div className="relative flex-1">
+                      <MapPin className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+
+                      <Input
+                        placeholder="Enter your location"
+                        className="pl-12 h-14 text-lg border-gray-200 focus:border-blue-500 focus:ring-blue-500/20 bg-white"
+                      />
+                    </div>
+
+                    <div className="relative flex-1">
+                      <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+
+                      <Input
+                        placeholder="Search gyms, trainers, classes..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="pl-12 h-14 text-lg border-gray-200 focus:border-blue-500 focus:ring-blue-500/20 bg-white"
+                      />
+                    </div>
+
+                    <Button
+                      size="lg"
+                      className="h-14 px-8 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-200 w-full sm:w-auto"
+                    >
+                      <Search className="h-5 w-5 mr-2" />
+                      Search
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <div className="flex flex-col lg:flex-row">
+        {/* Desktop Filter Sidebar */}
+
+        <div className="hidden lg:block w-96 bg-white/80 backdrop-blur-sm border-r border-gray-200 p-6 overflow-y-auto max-h-screen sticky top-0">
+          <FilterContent />
+        </div>
+
+        {/* Main Content */}
+
+        <div className="flex-1 p-4 sm:p-6 lg:p-8">
+          {/* Mobile Filter Controls */}
+
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8 lg:hidden">
+            <div className="flex items-center gap-3">
+              <Sheet open={isFilterOpen} onOpenChange={setIsFilterOpen}>
+                <SheetTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className="flex items-center gap-2 h-10 px-4 border-2 hover:border-blue-300 hover:bg-blue-50 bg-transparent"
+                  >
+                    <SlidersHorizontal className="h-4 w-4" />
+
+                    <span className="font-medium">Filters</span>
+
+                    {activeFiltersCount > 0 && (
+                      <Badge className="ml-1 bg-blue-600 hover:bg-blue-700 text-xs">
+                        {activeFiltersCount}
+                      </Badge>
+                    )}
+                  </Button>
+                </SheetTrigger>
+
+                <SheetContent
+                  side="left"
+                  className="w-96 overflow-y-auto bg-white"
+                >
+                  <SheetHeader className="pb-6">
+                    <SheetTitle className="text-xl font-bold">
+                      Filter Gyms
+                    </SheetTitle>
+
+                    <SheetDescription className="text-gray-600">
+                      Refine your search to find the perfect gym for your
+                      fitness journey.
+                    </SheetDescription>
+                  </SheetHeader>
+
+                  <FilterContent />
+                </SheetContent>
+              </Sheet>
+
+              {/* Mobile Sort */}
+
+              <div className="flex items-center gap-2 border border-gray-200 rounded-lg px-3 py-2">
+                <Label className="text-sm font-medium whitespace-nowrap text-gray-700">
+                  Sort:
+                </Label>
+
+                <Select value={sortBy} onValueChange={setSortBy}>
+                  <SelectTrigger className="w-28 h-6 border-0 focus:ring-0 text-sm">
+                    <SelectValue />
+                  </SelectTrigger>
+
+                  <SelectContent>
+                    <SelectItem value="distance">📍 Distance</SelectItem>
+
+                    <SelectItem value="rating">⭐ Rating</SelectItem>
+
+                    <SelectItem value="price">💰 Price</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-16">
-            <Card className="group relative border-0 shadow-xl hover:shadow-2xl transition-all duration-500 hover:-translate-y-4 bg-gradient-to-br from-white via-blue-50/50 to-white overflow-hidden">
-              <div className="absolute inset-0 bg-gradient-to-br from-blue-600/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-              <CardHeader className="pb-6 relative">
-                <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl w-20 h-20 flex items-center justify-center mx-auto mb-6 shadow-lg group-hover:scale-110 transition-transform duration-300">
-                  <MapPin className="h-10 w-10 text-white" />
+          {/* Active Filters Display */}
+
+          {activeFiltersCount > 0 && (
+            <Card className="mb-8 border-blue-200 bg-blue-50/50">
+              <CardContent className="p-4">
+                <div className="flex flex-wrap gap-2">
+                  <Badge
+                    variant="secondary"
+                    className="bg-blue-100 text-blue-800 border-blue-200 px-3 py-1"
+                  >
+                    <Filter className="h-3 w-3 mr-1" />
+                    {activeFiltersCount} Active Filter
+                    {activeFiltersCount !== 1 ? "s" : ""}
+                  </Badge>
+
+                  {filters.priceRange[0] > 0 || filters.priceRange[1] < 100 ? (
+                    <Badge className="bg-green-600 hover:bg-green-700">
+                      💰 ${filters.priceRange[0]} - ${filters.priceRange[1]}
+                    </Badge>
+                  ) : null}
+
+                  {filters.minRating > 0 && (
+                    <Badge className="bg-yellow-600 hover:bg-yellow-700">
+                      ⭐ {filters.minRating}+ stars
+                    </Badge>
+                  )}
+
+                  {filters.maxDistance < 10 && (
+                    <Badge className="bg-purple-600 hover:bg-purple-700">
+                      📍 ≤ {filters.maxDistance} km
+                    </Badge>
+                  )}
+
+                  {filters.facilities.map((facility) => (
+                    <Badge
+                      key={facility}
+                      className="bg-blue-600 hover:bg-blue-700"
+                    >
+                      {facility}
+                    </Badge>
+                  ))}
                 </div>
-                <CardTitle className="text-2xl font-bold text-gray-900 group-hover:text-blue-600 transition-colors">
-                  Smart Location Search
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="relative">
-                <CardDescription className="text-lg text-gray-600 leading-relaxed">
-                  Our smart algorithm finds the perfect gym match based on your
-                  location, preferences, and fitness goals in seconds.
-                </CardDescription>
               </CardContent>
             </Card>
+          )}
 
-            <Card className="group relative border-0 shadow-xl hover:shadow-2xl transition-all duration-500 hover:-translate-y-4 bg-gradient-to-br from-white via-yellow-50/50 to-white overflow-hidden">
-              <div className="absolute inset-0 bg-gradient-to-br from-yellow-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-              <CardHeader className="pb-6 relative">
-                <div className="bg-gradient-to-br from-yellow-500 to-orange-500 rounded-2xl w-20 h-20 flex items-center justify-center mx-auto mb-6 shadow-lg group-hover:scale-110 transition-transform duration-300">
-                  <Star className="h-10 w-10 text-white" />
-                </div>
-                <CardTitle className="text-2xl font-bold text-gray-900 group-hover:text-yellow-600 transition-colors">
-                  Trusted Reviews
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="relative">
-                <CardDescription className="text-lg text-gray-600 leading-relaxed">
-                  Real reviews from verified members help you make confident
-                  decisions with our transparent rating system.
-                </CardDescription>
-              </CardContent>
-            </Card>
+          {/* Results Header - Hidden on mobile */}
 
-            <Card className="group relative border-0 shadow-xl hover:shadow-2xl transition-all duration-500 hover:-translate-y-4 bg-gradient-to-br from-white via-green-50/50 to-white overflow-hidden">
-              <div className="absolute inset-0 bg-gradient-to-br from-green-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-              <CardHeader className="pb-6 relative">
-                <div className="bg-gradient-to-br from-green-500 to-emerald-500 rounded-2xl w-20 h-20 flex items-center justify-center mx-auto mb-6 shadow-lg group-hover:scale-110 transition-transform duration-300">
-                  <Zap className="h-10 w-10 text-white" />
+          <div className="mb-8 hidden sm:block">
+            <Card className="border-0 shadow-sm bg-gradient-to-r from-white to-gray-50">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h2 className="text-2xl font-bold text-gray-900 mb-1">
+                      {sortedGyms.length} Gym
+                      {sortedGyms.length !== 1 ? "s" : ""} Found
+                    </h2>
+
+                    <p className="text-gray-600">
+                      Discover the best fitness centers in your area
+                      {activeFiltersCount > 0 && (
+                        <span className="ml-2 text-sm font-medium text-blue-600">
+                          • {activeFiltersCount} filter
+                          {activeFiltersCount !== 1 ? "s" : ""} applied
+                        </span>
+                      )}
+                    </p>
+                  </div>
+
+                  <div className="hidden sm:flex items-center gap-2 text-sm text-gray-500">
+                    <TrendingUp className="h-4 w-4" />
+                    Sorted by {sortBy}
+                  </div>
                 </div>
-                <CardTitle className="text-2xl font-bold text-gray-900 group-hover:text-green-600 transition-colors">
-                  Instant Access
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="relative">
-                <CardDescription className="text-lg text-gray-600 leading-relaxed">
-                  Book instantly and get immediate access to your chosen gym
-                  with our seamless digital membership system.
-                </CardDescription>
               </CardContent>
             </Card>
           </div>
+
+          {/* Gym Cards Grid */}
+
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-2 2xl:grid-cols-2 gap-6 lg:gap-8">
+            {sortedGyms.map((gym) => (
+              <div
+                key={gym.id}
+                className="transform hover:scale-[1.02] transition-transform duration-200"
+              >
+                <GymCard gym={gym} />
+              </div>
+            ))}
+          </div>
+
+          {/* No Results */}
+
+          {sortedGyms.length === 0 && (
+            <Card className="border-0 shadow-lg bg-gradient-to-br from-gray-50 to-white">
+              <CardContent className="p-12 text-center">
+                <div className="w-20 h-20 bg-gradient-to-br from-gray-200 to-gray-300 rounded-full flex items-center justify-center mx-auto mb-6">
+                  <Search className="h-8 w-8 text-gray-500" />
+                </div>
+
+                <h3 className="text-2xl font-bold text-gray-900 mb-4">
+                  No gyms found
+                </h3>
+
+                <p className="text-gray-600 mb-8 max-w-md mx-auto">
+                  We couldn&apos;t find any gyms matching your search criteria.
+                  Try adjusting your filters or search terms.
+                </p>
+
+                <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                  <Button
+                    variant="outline"
+                    onClick={() => setSearchTerm("")}
+                    className="h-12 px-6 border-2 hover:border-blue-300"
+                  >
+                    Clear Search
+                  </Button>
+
+                  {activeFiltersCount > 0 && (
+                    <Button
+                      onClick={clearAllFilters}
+                      className="h-12 px-6 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+                    >
+                      Clear All Filters
+                    </Button>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          )}
         </div>
-      </section>
+      </div>
 
-      {/* Benefits Section */}
-      <section className="py-24 bg-gradient-to-br from-gray-900 via-blue-900 to-purple-900 relative overflow-hidden">
-        {/* Animated Background */}
-        <div className="absolute inset-0 bg-[url('/placeholder.svg?height=1080&width=1920')] bg-cover bg-center opacity-5"></div>
-        <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-blue-600/20 via-transparent to-purple-600/20"></div>
+      <style jsx global>{`
+        .custom-scrollbar::-webkit-scrollbar {
+          width: 6px;
+        }
 
-        {/* Floating Elements */}
-        <div className="absolute top-20 left-20 w-32 h-32 bg-blue-500/10 rounded-full blur-3xl animate-pulse"></div>
-        <div className="absolute bottom-20 right-20 w-40 h-40 bg-purple-500/10 rounded-full blur-3xl animate-pulse delay-1000"></div>
+        .custom-scrollbar::-webkit-scrollbar-track {
+          background: #f1f5f9;
 
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-20 items-center">
-            <div className="order-2 lg:order-1">
-              <div className="inline-flex items-center bg-white/10 rounded-full px-6 py-3 mb-8 border border-white/20 backdrop-blur-sm">
-                <Trophy className="w-5 h-5 text-yellow-400 mr-2" />
-                <span className="text-white font-semibold">
-                  Premium Experience
-                </span>
-              </div>
+          border-radius: 3px;
+        }
 
-              <h2 className="text-5xl md:text-6xl font-bold text-white mb-10 leading-tight">
-                Everything You Need for
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400">
-                  {" "}
-                  Success
-                </span>
-              </h2>
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+          background: #cbd5e1;
 
-              <div className="space-y-8">
-                <div className="group flex items-start cursor-pointer">
-                  <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl p-4 mr-6 group-hover:scale-110 transition-all duration-300 shadow-lg">
-                    <Dumbbell className="h-8 w-8 text-white" />
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="text-2xl font-bold mb-3 text-white group-hover:text-blue-400 transition-colors">
-                      State-of-the-Art Equipment
-                    </h3>
-                    <p className="text-gray-300 text-lg leading-relaxed">
-                      Access cutting-edge fitness equipment and modern
-                      facilities designed for every workout style and fitness
-                      level.
-                    </p>
-                  </div>
-                </div>
+          border-radius: 3px;
+        }
 
-                <div className="group flex items-start cursor-pointer">
-                  <div className="bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl p-4 mr-6 group-hover:scale-110 transition-all duration-300 shadow-lg">
-                    <Users className="h-8 w-8 text-white" />
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="text-2xl font-bold mb-3 text-white group-hover:text-green-400 transition-colors">
-                      Expert Personal Trainers
-                    </h3>
-                    <p className="text-gray-300 text-lg leading-relaxed">
-                      Work with certified professionals who create personalized
-                      workout plans to accelerate your fitness journey.
-                    </p>
-                  </div>
-                </div>
-
-                <div className="group flex items-start cursor-pointer">
-                  <div className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-2xl p-4 mr-6 group-hover:scale-110 transition-all duration-300 shadow-lg">
-                    <Shield className="h-8 w-8 text-white" />
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="text-2xl font-bold mb-3 text-white group-hover:text-purple-400 transition-colors">
-                      Premium Safety Standards
-                    </h3>
-                    <p className="text-gray-300 text-lg leading-relaxed">
-                      Train with confidence in clean, safe environments with
-                      strict hygiene protocols and 24/7 security.
-                    </p>
-                  </div>
-                </div>
-
-                <div className="group flex items-start cursor-pointer">
-                  <div className="bg-gradient-to-br from-orange-500 to-red-500 rounded-2xl p-4 mr-6 group-hover:scale-110 transition-all duration-300 shadow-lg">
-                    <Heart className="h-8 w-8 text-white" />
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="text-2xl font-bold mb-3 text-white group-hover:text-orange-400 transition-colors">
-                      Flexible Membership Plans
-                    </h3>
-                    <p className="text-gray-300 text-lg leading-relaxed">
-                      Choose from various plans that adapt to your lifestyle,
-                      budget, and fitness goals with easy modifications.
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="relative order-1 lg:order-2">
-              <div className="relative">
-                {/* Main Image */}
-                <div className="relative overflow-hidden rounded-3xl shadow-2xl">
-                  <Image
-                    src={home}
-                    alt="Premium gym interior with modern equipment"
-                    width={700}
-                    height={600}
-                    className="w-full h-auto"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
-                </div>
-
-                {/* Floating Stats Cards */}
-                <div className="absolute -top-8 -right-8 bg-white/95 backdrop-blur-lg rounded-2xl p-6 shadow-xl border border-white/20">
-                  <div className="flex items-center space-x-4">
-                    <div className="bg-green-100 rounded-full p-3">
-                      <TrendingUp className="h-8 w-8 text-green-600" />
-                    </div>
-                    <div>
-                      <p className="text-2xl font-bold text-gray-900">98%</p>
-                      <p className="text-sm text-gray-600">Success Rate</p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="absolute -bottom-8 -left-8 bg-white/95 backdrop-blur-lg rounded-2xl p-6 shadow-xl border border-white/20">
-                  <div className="flex items-center space-x-4">
-                    <div className="bg-blue-100 rounded-full p-3">
-                      <Target className="h-8 w-8 text-blue-600" />
-                    </div>
-                    <div>
-                      <p className="text-2xl font-bold text-gray-900">10K+</p>
-                      <p className="text-sm text-gray-600">Goals Achieved</p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Decorative Elements */}
-                <div className="absolute -z-10 top-10 right-10 w-40 h-40 bg-gradient-to-br from-blue-400/30 to-purple-400/30 rounded-full blur-3xl"></div>
-                <div className="absolute -z-10 bottom-10 left-10 w-32 h-32 bg-gradient-to-br from-green-400/30 to-blue-400/30 rounded-full blur-3xl"></div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* How It Works Section */}
-      <section className="py-24 bg-gradient-to-br from-slate-50 via-white to-blue-50/30 relative overflow-hidden">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
-          <div className="text-center mb-20">
-            <div className="inline-flex items-center bg-gradient-to-r from-blue-600/10 to-purple-600/10 rounded-full px-6 py-3 mb-6 border border-blue-200/50 backdrop-blur-sm">
-              <Clock className="w-5 h-5 text-blue-600 mr-2" />
-              <span className="text-blue-700 font-semibold">
-                Simple Process
-              </span>
-            </div>
-            <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
-              Get Started in
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600">
-                {" "}
-                Minutes
-              </span>
-            </h2>
-            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-              Our streamlined process makes finding and booking your perfect gym
-              incredibly simple
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-            {/* Step 1 */}
-            <div className="relative group">
-              <div className="bg-white rounded-3xl p-8 shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-100 hover:-translate-y-2">
-                <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl w-16 h-16 flex items-center justify-center mx-auto mb-6 shadow-lg group-hover:scale-110 transition-transform duration-300">
-                  <Smartphone className="h-8 w-8 text-white" />
-                </div>
-                <div className="text-center">
-                  <div className="bg-blue-100 text-blue-600 rounded-full w-8 h-8 flex items-center justify-center mx-auto mb-4 text-sm font-bold">
-                    1
-                  </div>
-                  <h3 className="text-xl font-bold text-gray-900 mb-3">
-                    Download App
-                  </h3>
-                  <p className="text-gray-600 leading-relaxed">
-                    Get our mobile app and create your account in under 2
-                    minutes
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {/* Step 2 */}
-            <div className="relative group">
-              <div className="bg-white rounded-3xl p-8 shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-100 hover:-translate-y-2">
-                <div className="bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl w-16 h-16 flex items-center justify-center mx-auto mb-6 shadow-lg group-hover:scale-110 transition-transform duration-300">
-                  <MapPin className="h-8 w-8 text-white" />
-                </div>
-                <div className="text-center">
-                  <div className="bg-green-100 text-green-600 rounded-full w-8 h-8 flex items-center justify-center mx-auto mb-4 text-sm font-bold">
-                    2
-                  </div>
-                  <h3 className="text-xl font-bold text-gray-900 mb-3">
-                    Find Gyms
-                  </h3>
-                  <p className="text-gray-600 leading-relaxed">
-                    Search for gyms near you and explore facilities, amenities,
-                    and reviews
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {/* Step 3 */}
-            <div className="relative group">
-              <div className="bg-white rounded-3xl p-8 shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-100 hover:-translate-y-2">
-                <div className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-2xl w-16 h-16 flex items-center justify-center mx-auto mb-6 shadow-lg group-hover:scale-110 transition-transform duration-300">
-                  <Calendar className="h-8 w-8 text-white" />
-                </div>
-                <div className="text-center">
-                  <div className="bg-purple-100 text-purple-600 rounded-full w-8 h-8 flex items-center justify-center mx-auto mb-4 text-sm font-bold">
-                    3
-                  </div>
-                  <h3 className="text-xl font-bold text-gray-900 mb-3">
-                    Book Instantly
-                  </h3>
-                  <p className="text-gray-600 leading-relaxed">
-                    Choose your membership plan and book your gym access
-                    instantly
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {/* Step 4 */}
-            <div className="relative group">
-              <div className="bg-white rounded-3xl p-8 shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-100 hover:-translate-y-2">
-                <div className="bg-gradient-to-br from-orange-500 to-red-500 rounded-2xl w-16 h-16 flex items-center justify-center mx-auto mb-6 shadow-lg group-hover:scale-110 transition-transform duration-300">
-                  <Award className="h-8 w-8 text-white" />
-                </div>
-                <div className="text-center">
-                  <div className="bg-orange-100 text-orange-600 rounded-full w-8 h-8 flex items-center justify-center mx-auto mb-4 text-sm font-bold">
-                    4
-                  </div>
-                  <h3 className="text-xl font-bold text-gray-900 mb-3">
-                    Start Training
-                  </h3>
-                  <p className="text-gray-600 leading-relaxed">
-                    Show up and start your fitness journey with full access to
-                    facilities
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Call to Action */}
-          <div className="text-center mt-16">
-            <Button
-              size="lg"
-              asChild
-              className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-10 py-6 text-lg rounded-full shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105"
-            >
-              <Link href="/gyms" className="flex items-center">
-                <Zap className="mr-3 h-6 w-6" />
-                Get Started Now
-                <ArrowRight className="ml-3 h-6 w-6" />
-              </Link>
-            </Button>
-          </div>
-        </div>
-      </section>
-
-      {/* Enhanced CTA Section */}
-      <section className="py-28 bg-gradient-to-br from-gray-900 via-black to-gray-900 text-white relative overflow-hidden">
-        {/* Animated Background */}
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_50%,rgba(59,130,246,0.3),transparent_70%)]"></div>
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_20%,rgba(147,51,234,0.3),transparent_70%)]"></div>
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_40%_80%,rgba(236,72,153,0.2),transparent_70%)]"></div>
-
-        {/* Floating Elements */}
-        <div className="absolute top-10 left-10 w-20 h-20 bg-blue-500/20 rounded-full blur-xl animate-bounce"></div>
-        <div className="absolute bottom-10 right-10 w-32 h-32 bg-purple-500/20 rounded-full blur-xl animate-pulse"></div>
-        <div className="absolute top-1/2 left-1/4 w-16 h-16 bg-pink-500/20 rounded-full blur-xl animate-ping"></div>
-
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <div className="inline-flex items-center bg-gradient-to-r from-blue-600/20 to-purple-600/20 rounded-full px-8 py-4 mb-8 border border-blue-500/30 backdrop-blur-sm">
-            <Sparkles className="w-6 h-6 text-blue-400 mr-3" />
-            <span className="text-blue-300 font-semibold text-lg">
-              Limited Time Offer
-            </span>
-          </div>
-
-          <h2 className="text-5xl md:text-7xl font-bold mb-8 leading-tight">
-            Ready to Transform Your
-            <br />
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 animate-pulse">
-              Fitness Journey?
-            </span>
-          </h2>
-
-          <p className="text-xl md:text-2xl mb-12 text-gray-200 max-w-4xl mx-auto leading-relaxed">
-            Join thousands of fitness enthusiasts who&apos;ve found their
-            perfect gym through FitNearBy. Start your transformation today with
-            exclusive member benefits!
-          </p>
-
-          <div className="flex flex-col sm:flex-row gap-6 justify-center items-center mb-12">
-            <Button
-              size="lg"
-              asChild
-              className="group bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 hover:from-blue-700 hover:via-purple-700 hover:to-pink-700 text-white px-12 py-8 text-xl rounded-full shadow-2xl hover:shadow-blue-500/25 transition-all duration-500 hover:scale-105"
-            >
-              <Link href="/gyms" className="flex items-center">
-                <Zap className="mr-3 h-6 w-6 group-hover:animate-pulse" />
-                Find Your Perfect Gym
-                <ArrowRight className="ml-3 h-6 w-6 group-hover:translate-x-2 transition-transform duration-300" />
-              </Link>
-            </Button>
-          </div>
-
-          {/* Trust Indicators */}
-          <div className="flex flex-col sm:flex-row items-center justify-center space-y-4 sm:space-y-0 sm:space-x-12 text-gray-300">
-            <div className="flex items-center">
-              <CheckCircle className="w-5 h-5 text-green-400 mr-2" />
-              <span>No Setup Fees</span>
-            </div>
-            <div className="flex items-center">
-              <CheckCircle className="w-5 h-5 text-green-400 mr-2" />
-              <span>Instant Access</span>
-            </div>
-            <div className="flex items-center">
-              <CheckCircle className="w-5 h-5 text-green-400 mr-2" />
-              <span>24/7 Support</span>
-            </div>
-          </div>
-        </div>
-      </section>
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+          background: #94a3b8;
+        }
+      `}</style>
     </div>
   );
 }

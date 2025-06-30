@@ -24,12 +24,12 @@ export default function Footer() {
             <h4 className="text-lg font-semibold mb-4">Quick Links</h4>
             <ul className="space-y-2">
               <li>
-                <Link href="/" className="text-gray-300 hover:text-white">
+                <Link href="/home" className="text-gray-300 hover:text-white">
                   Home
                 </Link>
               </li>
               <li>
-                <Link href="/gyms" className="text-gray-300 hover:text-white">
+                <Link href="/" className="text-gray-300 hover:text-white">
                   Find Gyms
                 </Link>
               </li>
@@ -68,7 +68,7 @@ export default function Footer() {
         </div>
 
         <div className="border-t border-gray-800 mt-8 pt-8 text-center text-gray-300">
-          <p>&copy; 2024 FitNearBy. All rights reserved.</p>
+          <p>&copy; 2025 FitNearBy. All rights reserved.</p>
         </div>
       </div>
     </footer>

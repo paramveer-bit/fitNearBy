@@ -107,7 +107,7 @@ export default function ImageCarousel() {
             asChild
             className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-8 py-3 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
           >
-            <Link href="/gyms">Browse All Gyms</Link>
+            <Link href="/">Browse All Gyms</Link>
           </Button>
         </div>
       </div>
