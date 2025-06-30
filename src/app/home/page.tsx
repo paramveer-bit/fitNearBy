@@ -238,7 +238,7 @@ export default function HomePage() {
                       <TrendingUp className="h-8 w-8 text-green-600" />
                     </div>
                     <div>
-                      <p className="text-2xl font-bold text-gray-900">98%</p>
+                      <p className="text-2xl font-bold text-gray-900">100%</p>
                       <p className="text-sm text-gray-600">Success Rate</p>
                     </div>
                   </div>
@@ -300,11 +300,11 @@ export default function HomePage() {
                     1
                   </div>
                   <h3 className="text-xl font-bold text-gray-900 mb-3">
-                    Download App
+                    Create Account
                   </h3>
                   <p className="text-gray-600 leading-relaxed">
-                    Get our mobile app and create your account in under 2
-                    minutes
+                    Sign up quickly using your email under 2 minutes and start
+                    exploring
                   </p>
                 </div>
               </div>

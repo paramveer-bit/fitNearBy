@@ -1,14 +1,6 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import {
-  ArrowRight,
-  Star,
-  MapPin,
-  Clock,
-  Zap,
-  Users,
-  TrendingUp,
-} from "lucide-react";
+import { ArrowRight, Star, MapPin, Clock, Zap } from "lucide-react";
 
 function Hero() {
   return (
@@ -74,7 +66,7 @@ function Hero() {
 
             {/* Enhanced Social Proof */}
             <div className="flex flex-col space-y-6 pt-8">
-              <div className="flex items-center">
+              {/* <div className="flex items-center">
                 <div className="flex -space-x-4 mr-6">
                   <div className="w-14 h-14 bg-gradient-to-r from-cyan-400 to-blue-500 rounded-full border-4 border-white shadow-xl"></div>
                   <div className="w-14 h-14 bg-gradient-to-r from-emerald-400 to-cyan-500 rounded-full border-4 border-white shadow-xl"></div>
@@ -91,21 +83,21 @@ function Hero() {
                     Already transformed their lives
                   </div>
                 </div>
-              </div>
+              </div> */}
 
               <div className="flex items-center space-x-8 text-blue-200 text-lg">
                 <div className="flex items-center bg-white/10 rounded-full px-4 py-2 backdrop-blur-sm">
                   <Star className="w-6 h-6 text-yellow-400 mr-2" />
                   <span className="font-bold text-white text-xl">4.9/5</span>
                 </div>
-                <div className="flex items-center">
+                {/* <div className="flex items-center">
                   <Users className="w-6 h-6 text-cyan-400 mr-2" />
                   <span>500+ Premium Gyms</span>
                 </div>
                 <div className="flex items-center">
                   <TrendingUp className="w-6 h-6 text-emerald-400 mr-2" />
                   <span>100+ Cities</span>
-                </div>
+                </div> */}
               </div>
             </div>
           </div>
@@ -153,15 +145,13 @@ function Hero() {
                       <div className="text-4xl font-bold text-cyan-300 mb-2">
                         500+
                       </div>
-                      <div className="text-cyan-100 font-medium">
-                        Premium Gyms
-                      </div>
+                      <div className="text-cyan-100 font-medium">Bookings</div>
                     </div>
                     <div className="bg-gradient-to-br from-emerald-500/25 to-green-600/25 rounded-2xl p-5 border border-emerald-400/40">
                       <div className="text-4xl font-bold text-emerald-300 mb-2">
                         100+
                       </div>
-                      <div className="text-emerald-100 font-medium">Cities</div>
+                      <div className="text-emerald-100 font-medium">Gyms </div>
                     </div>
                     <div className="bg-gradient-to-br from-indigo-500/25 to-purple-600/25 rounded-2xl p-5 border border-indigo-400/40">
                       <div className="text-4xl font-bold text-indigo-300 mb-2">

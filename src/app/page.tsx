@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, memo } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -71,6 +71,222 @@ interface LocationState {
   loading: boolean;
   permissionDenied: boolean;
 }
+
+const FilterContent = memo(function FilterContent({
+  filters,
+  setFilters,
+  activeFiltersCount,
+  clearAllFilters,
+  toggleFacility,
+  sortBy,
+  setSortBy,
+}: {
+  filters: Filters;
+  setFilters: React.Dispatch<React.SetStateAction<Filters>>;
+  activeFiltersCount: number;
+  clearAllFilters: () => void;
+  toggleFacility: (f: string) => void;
+  sortBy: string;
+  setSortBy: (s: string) => void;
+}) {
+  // Local slider states
+  const [tempPriceRange, setTempPriceRange] = useState<Filters["priceRange"]>(
+    filters.priceRange
+  );
+  const [tempRating, setTempRating] = useState<number>(filters.minRating);
+  const [tempDistance, setTempDistance] = useState<number>(filters.maxDistance);
+
+  // Sync on external filters change
+  useEffect(() => {
+    setTempPriceRange(filters.priceRange);
+  }, [filters.priceRange]);
+
+  useEffect(() => {
+    setTempRating(filters.minRating);
+  }, [filters.minRating]);
+
+  useEffect(() => {
+    setTempDistance(filters.maxDistance);
+  }, [filters.maxDistance]);
+
+  return (
+    <div className="space-y-8">
+      <div className="flex items-center gap-3">
+        <div className="p-2 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg">
+          <Filter className="h-5 w-5 text-white" />
+        </div>
+        <div>
+          <h2 className="text-xl font-bold text-gray-900">Filters</h2>
+          <p className="text-sm text-gray-500">Refine your search</p>
+        </div>
+      </div>
+
+      {/* Sort By */}
+      <Card className="border-0 shadow-sm bg-gradient-to-br from-gray-50 to-white">
+        <CardContent className="p-4 space-y-3">
+          <div className="flex items-center gap-2">
+            <TrendingUp className="h-4 w-4 text-blue-600" />
+            <Label className="text-sm font-semibold text-gray-900">
+              Sort By
+            </Label>
+          </div>
+          <Select value={sortBy} onValueChange={setSortBy}>
+            <SelectTrigger className="border-gray-200 focus:border-blue-500 focus:ring-blue-500/20">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="distance">📍 Distance</SelectItem>
+              <SelectItem value="rating">⭐ Rating</SelectItem>
+              <SelectItem value="price">💰 Price</SelectItem>
+            </SelectContent>
+          </Select>
+        </CardContent>
+      </Card>
+
+      <Card className="border-0 shadow-sm bg-gradient-to-br from-blue-50 to-white">
+        <CardContent className="p-4 space-y-4">
+          <div className="flex items-center gap-2">
+            <Zap className="h-4 w-4 text-blue-600" />
+            <Label className="text-sm font-semibold text-gray-900">
+              Required Facilities
+            </Label>
+          </div>
+          <div className="space-y-3 max-h-64 overflow-y-auto custom-scrollbar">
+            {allFacilities.map((facility) => (
+              <div
+                key={facility}
+                className="flex items-center space-x-3 p-2 rounded-lg hover:bg-blue-50/50 transition-colors"
+              >
+                <Checkbox
+                  id={facility}
+                  checked={filters.facilities.includes(facility)}
+                  onCheckedChange={() => toggleFacility(facility)}
+                  className="border-blue-300 data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600"
+                />
+                <Label
+                  htmlFor={facility}
+                  className="text-sm font-medium cursor-pointer flex-1"
+                >
+                  {facility}
+                </Label>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Price Range */}
+      <Card className="border-0 shadow-sm bg-gradient-to-br from-green-50 to-white">
+        <CardContent className="p-4 space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span className="text-lg">💰</span>
+              <Label className="text-sm font-semibold text-gray-900">
+                Price Range
+              </Label>
+            </div>
+            <Badge
+              variant="secondary"
+              className="bg-green-100 text-green-800 border-green-200"
+            >
+              ₹ {tempPriceRange[0]} - ₹ {tempPriceRange[1]}
+            </Badge>
+          </div>
+          <Slider
+            value={tempPriceRange}
+            onValueChange={(val) => setTempPriceRange(val as [number, number])}
+            onValueCommit={(val) =>
+              setFilters((prev) => ({
+                ...prev,
+                priceRange: val as [number, number],
+              }))
+            }
+            max={20000}
+            min={0}
+            step={100}
+            className="w-full [&_[role=slider]]:bg-green-600 [&_[role=slider]]:border-green-600"
+          />
+        </CardContent>
+      </Card>
+
+      {/* Minimum Rating */}
+      <Card className="border-0 shadow-sm bg-gradient-to-br from-yellow-50 to-white">
+        <CardContent className="p-4 space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Star className="h-4 w-4 text-yellow-500 fill-current" />
+              <Label className="text-sm font-semibold text-gray-900">
+                Minimum Rating
+              </Label>
+            </div>
+            <Badge
+              variant="secondary"
+              className="bg-yellow-100 text-yellow-800 border-yellow-200"
+            >
+              {tempRating > 0 ? `${tempRating}+ ⭐` : "Any"}
+            </Badge>
+          </div>
+          <Slider
+            value={[tempRating]}
+            onValueChange={(val) => setTempRating(val[0])}
+            onValueCommit={() =>
+              setFilters((prev) => ({ ...prev, minRating: tempRating }))
+            }
+            max={5}
+            min={0}
+            step={0.1}
+            className="w-full [&_[role=slider]]:bg-yellow-500 [&_[role=slider]]:border-yellow-500"
+          />
+        </CardContent>
+      </Card>
+
+      {/* Maximum Distance */}
+      <Card className="border-0 shadow-sm bg-gradient-to-br from-purple-50 to-white">
+        <CardContent className="p-4 space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <MapPin className="h-4 w-4 text-purple-600" />
+              <Label className="text-sm font-semibold text-gray-900">
+                Max Distance
+              </Label>
+            </div>
+            <Badge
+              variant="secondary"
+              className="bg-purple-100 text-purple-800 border-purple-200"
+            >
+              {tempDistance < 10 ? `${tempDistance} km` : "Any"}
+            </Badge>
+          </div>
+          <Slider
+            value={[tempDistance]}
+            onValueChange={(val) => setTempDistance(val[0])}
+            onValueCommit={() =>
+              setFilters((prev) => ({ ...prev, maxDistance: tempDistance }))
+            }
+            max={50}
+            min={0.5}
+            step={0.5}
+            className="w-full [&_[role=slider]]:bg-purple-600 [&_[role=slider]]:border-purple-600"
+          />
+        </CardContent>
+      </Card>
+
+      {/* Facilities */}
+
+      {/* Clear Filters Button */}
+      {activeFiltersCount > 0 && (
+        <Button
+          variant="outline"
+          onClick={clearAllFilters}
+          className="w-full h-12 border-2 border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300 font-semibold bg-transparent"
+        >
+          <X className="h-4 w-4 mr-2" /> Clear All Filters ({activeFiltersCount}
+          )
+        </Button>
+      )}
+    </div>
+  );
+});
 
 export default function GymsPage() {
   const [gyms, setGyms] = useState<GYM[]>([]);
@@ -423,189 +639,189 @@ export default function GymsPage() {
     });
   };
 
-  const toggleFacility = (facility: string) => {
-    setFilters((prev) => ({
-      ...prev,
-      facilities: prev.facilities.includes(facility)
-        ? prev.facilities.filter((f) => f !== facility)
-        : [...prev.facilities, facility],
-    }));
-  };
+  // const toggleFacility = (facility: string) => {
+  //   setFilters((prev) => ({
+  //     ...prev,
+  //     facilities: prev.facilities.includes(facility)
+  //       ? prev.facilities.filter((f) => f !== facility)
+  //       : [...prev.facilities, facility],
+  //   }));
+  // };
 
   // Filter content component
-  const FilterContent = () => (
-    <div className="space-y-8">
-      <div className="flex items-center gap-3">
-        <div className="p-2 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg">
-          <Filter className="h-5 w-5 text-white" />
-        </div>
-        <div>
-          <h2 className="text-xl font-bold text-gray-900">Filters</h2>
-          <p className="text-sm text-gray-500">Refine your search</p>
-        </div>
-      </div>
+  //   const FilterContent = () => (
+  //     <div className="space-y-8">
+  //       <div className="flex items-center gap-3">
+  //         <div className="p-2 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg">
+  //           <Filter className="h-5 w-5 text-white" />
+  //         </div>
+  //         <div>
+  //           <h2 className="text-xl font-bold text-gray-900">Filters</h2>
+  //           <p className="text-sm text-gray-500">Refine your search</p>
+  //         </div>
+  //       </div>
 
-      {/* Sort By */}
-      <Card className="border-0 shadow-sm bg-gradient-to-br from-gray-50 to-white">
-        <CardContent className="p-4 space-y-3">
-          <div className="flex items-center gap-2">
-            <TrendingUp className="h-4 w-4 text-blue-600" />
-            <Label className="text-sm font-semibold text-gray-900">
-              Sort By
-            </Label>
-          </div>
-          <Select value={sortBy} onValueChange={setSortBy}>
-            <SelectTrigger className="border-gray-200 focus:border-blue-500 focus:ring-blue-500/20">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="distance">📍 Distance</SelectItem>
-              <SelectItem value="rating">⭐ Rating</SelectItem>
-              <SelectItem value="price">💰 Price</SelectItem>
-            </SelectContent>
-          </Select>
-        </CardContent>
-      </Card>
+  //       {/* Sort By */}
+  //       <Card className="border-0 shadow-sm bg-gradient-to-br from-gray-50 to-white">
+  //         <CardContent className="p-4 space-y-3">
+  //           <div className="flex items-center gap-2">
+  //             <TrendingUp className="h-4 w-4 text-blue-600" />
+  //             <Label className="text-sm font-semibold text-gray-900">
+  //               Sort By
+  //             </Label>
+  //           </div>
+  //           <Select value={sortBy} onValueChange={setSortBy}>
+  //             <SelectTrigger className="border-gray-200 focus:border-blue-500 focus:ring-blue-500/20">
+  //               <SelectValue />
+  //             </SelectTrigger>
+  //             <SelectContent>
+  //               <SelectItem value="distance">📍 Distance</SelectItem>
+  //               <SelectItem value="rating">⭐ Rating</SelectItem>
+  //               <SelectItem value="price">💰 Price</SelectItem>
+  //             </SelectContent>
+  //           </Select>
+  //         </CardContent>
+  //       </Card>
 
-      {/* Price Range */}
-      <Card className="border-0 shadow-sm bg-gradient-to-br from-green-50 to-white">
-        <CardContent className="p-4 space-y-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <span className="text-lg">💰</span>
-              <Label className="text-sm font-semibold text-gray-900">
-                Price Range
-              </Label>
-            </div>
-            <Badge
-              variant="secondary"
-              className="bg-green-100 text-green-800 border-green-200"
-            >
-              ${filters.priceRange[0]} - ${filters.priceRange[1]}
-            </Badge>
-          </div>
-          <Slider
-            value={filters.priceRange}
-            onValueChange={(value) =>
-              setFilters((prev) => ({
-                ...prev,
-                priceRange: value as [number, number],
-              }))
-            }
-            max={20000}
-            min={0}
-            step={100}
-            className="w-full [&_[role=slider]]:bg-green-600 [&_[role=slider]]:border-green-600"
-          />
-        </CardContent>
-      </Card>
+  //       {/* Price Range */}
+  //       <Card className="border-0 shadow-sm bg-gradient-to-br from-green-50 to-white">
+  //         <CardContent className="p-4 space-y-4">
+  //           <div className="flex items-center justify-between">
+  //             <div className="flex items-center gap-2">
+  //               <span className="text-lg">💰</span>
+  //               <Label className="text-sm font-semibold text-gray-900">
+  //                 Price Range
+  //               </Label>
+  //             </div>
+  //             <Badge
+  //               variant="secondary"
+  //               className="bg-green-100 text-green-800 border-green-200"
+  //             >
+  //               ${filters.priceRange[0]} - ${filters.priceRange[1]}
+  //             </Badge>
+  //           </div>
+  //           <Slider
+  //             value={filters.priceRange}
+  //             onValueChange={(value) =>
+  //               setFilters((prev) => ({
+  //                 ...prev,
+  //                 priceRange: value as [number, number],
+  //               }))
+  //             }
+  //             max={20000}
+  //             min={0}
+  //             step={100}
+  //             className="w-full [&_[role=slider]]:bg-green-600 [&_[role=slider]]:border-green-600"
+  //           />
+  //         </CardContent>
+  //       </Card>
 
-      {/* Minimum Rating */}
-      <Card className="border-0 shadow-sm bg-gradient-to-br from-yellow-50 to-white">
-        <CardContent className="p-4 space-y-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Star className="h-4 w-4 text-yellow-500 fill-current" />
-              <Label className="text-sm font-semibold text-gray-900">
-                Minimum Rating
-              </Label>
-            </div>
-            <Badge
-              variant="secondary"
-              className="bg-yellow-100 text-yellow-800 border-yellow-200"
-            >
-              {filters.minRating > 0 ? `${filters.minRating}+ ⭐` : "Any"}
-            </Badge>
-          </div>
-          <Slider
-            value={[filters.minRating]}
-            onValueChange={(value) =>
-              setFilters((prev) => ({ ...prev, minRating: value[0] }))
-            }
-            max={5}
-            min={0}
-            step={0.1}
-            className="w-full [&_[role=slider]]:bg-yellow-500 [&_[role=slider]]:border-yellow-500"
-          />
-        </CardContent>
-      </Card>
+  //       {/* Minimum Rating */}
+  //       <Card className="border-0 shadow-sm bg-gradient-to-br from-yellow-50 to-white">
+  //         <CardContent className="p-4 space-y-4">
+  //           <div className="flex items-center justify-between">
+  //             <div className="flex items-center gap-2">
+  //               <Star className="h-4 w-4 text-yellow-500 fill-current" />
+  //               <Label className="text-sm font-semibold text-gray-900">
+  //                 Minimum Rating
+  //               </Label>
+  //             </div>
+  //             <Badge
+  //               variant="secondary"
+  //               className="bg-yellow-100 text-yellow-800 border-yellow-200"
+  //             >
+  //               {filters.minRating > 0 ? `${filters.minRating}+ ⭐` : "Any"}
+  //             </Badge>
+  //           </div>
+  //           <Slider
+  //             value={[filters.minRating]}
+  //             onValueChange={(value) =>
+  //               setFilters((prev) => ({ ...prev, minRating: value[0] }))
+  //             }
+  //             max={5}
+  //             min={0}
+  //             step={0.1}
+  //             className="w-full [&_[role=slider]]:bg-yellow-500 [&_[role=slider]]:border-yellow-500"
+  //           />
+  //         </CardContent>
+  //       </Card>
 
-      {/* Maximum Distance */}
-      <Card className="border-0 shadow-sm bg-gradient-to-br from-purple-50 to-white">
-        <CardContent className="p-4 space-y-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <MapPin className="h-4 w-4 text-purple-600" />
-              <Label className="text-sm font-semibold text-gray-900">
-                Max Distance
-              </Label>
-            </div>
-            <Badge
-              variant="secondary"
-              className="bg-purple-100 text-purple-800 border-purple-200"
-            >
-              {filters.maxDistance < 10 ? `${filters.maxDistance} km` : "Any"}
-            </Badge>
-          </div>
-          <Slider
-            value={[filters.maxDistance]}
-            onValueChange={(value) =>
-              setFilters((prev) => ({ ...prev, maxDistance: value[0] }))
-            }
-            max={50}
-            min={0.5}
-            step={0.5}
-            className="w-full [&_[role=slider]]:bg-purple-600 [&_[role=slider]]:border-purple-600"
-          />
-        </CardContent>
-      </Card>
+  //       {/* Maximum Distance */}
+  //       <Card className="border-0 shadow-sm bg-gradient-to-br from-purple-50 to-white">
+  //         <CardContent className="p-4 space-y-4">
+  //           <div className="flex items-center justify-between">
+  //             <div className="flex items-center gap-2">
+  //               <MapPin className="h-4 w-4 text-purple-600" />
+  //               <Label className="text-sm font-semibold text-gray-900">
+  //                 Max Distance
+  //               </Label>
+  //             </div>
+  //             <Badge
+  //               variant="secondary"
+  //               className="bg-purple-100 text-purple-800 border-purple-200"
+  //             >
+  //               {filters.maxDistance < 10 ? `${filters.maxDistance} km` : "Any"}
+  //             </Badge>
+  //           </div>
+  //           <Slider
+  //             value={[filters.maxDistance]}
+  //             onValueChange={(value) =>
+  //               setFilters((prev) => ({ ...prev, maxDistance: value[0] }))
+  //             }
+  //             max={50}
+  //             min={0.5}
+  //             step={0.5}
+  //             className="w-full [&_[role=slider]]:bg-purple-600 [&_[role=slider]]:border-purple-600"
+  //           />
+  //         </CardContent>
+  //       </Card>
 
-      {/* Facilities */}
-      <Card className="border-0 shadow-sm bg-gradient-to-br from-blue-50 to-white">
-        <CardContent className="p-4 space-y-4">
-          <div className="flex items-center gap-2">
-            <Zap className="h-4 w-4 text-blue-600" />
-            <Label className="text-sm font-semibold text-gray-900">
-              Required Facilities
-            </Label>
-          </div>
-          <div className="space-y-3 max-h-64 overflow-y-auto custom-scrollbar">
-            {allFacilities.map((facility) => (
-              <div
-                key={facility}
-                className="flex items-center space-x-3 p-2 rounded-lg hover:bg-blue-50/50 transition-colors"
-              >
-                <Checkbox
-                  id={facility}
-                  checked={filters.facilities.includes(facility)}
-                  onCheckedChange={() => toggleFacility(facility)}
-                  className="border-blue-300 data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600"
-                />
-                <Label
-                  htmlFor={facility}
-                  className="text-sm font-medium cursor-pointer flex-1"
-                >
-                  {facility}
-                </Label>
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
+  //       {/* Facilities */}
+  //       <Card className="border-0 shadow-sm bg-gradient-to-br from-blue-50 to-white">
+  //         <CardContent className="p-4 space-y-4">
+  //           <div className="flex items-center gap-2">
+  //             <Zap className="h-4 w-4 text-blue-600" />
+  //             <Label className="text-sm font-semibold text-gray-900">
+  //               Required Facilities
+  //             </Label>
+  //           </div>
+  //           <div className="space-y-3 max-h-64 overflow-y-auto custom-scrollbar">
+  //             {allFacilities.map((facility) => (
+  //               <div
+  //                 key={facility}
+  //                 className="flex items-center space-x-3 p-2 rounded-lg hover:bg-blue-50/50 transition-colors"
+  //               >
+  //                 <Checkbox
+  //                   id={facility}
+  //                   checked={filters.facilities.includes(facility)}
+  //                   onCheckedChange={() => toggleFacility(facility)}
+  //                   className="border-blue-300 data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600"
+  //                 />
+  //                 <Label
+  //                   htmlFor={facility}
+  //                   className="text-sm font-medium cursor-pointer flex-1"
+  //                 >
+  //                   {facility}
+  //                 </Label>
+  //               </div>
+  //             ))}
+  //           </div>
+  //         </CardContent>
+  //       </Card>
 
-      {/* Clear Filters */}
-      {activeFiltersCount > 0 && (
-        <Button
-          variant="outline"
-          onClick={clearAllFilters}
-          className="w-full h-12 border-2 border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300 font-semibold bg-transparent"
-        >
-          <X className="h-4 w-4 mr-2" />
-          Clear All Filters ({activeFiltersCount})
-        </Button>
-      )}
-    </div>
-  );
+  //       {/* Clear Filters */}
+  //       {activeFiltersCount > 0 && (
+  //         <Button
+  //           variant="outline"
+  //           onClick={clearAllFilters}
+  //           className="w-full h-12 border-2 border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300 font-semibold bg-transparent"
+  //         >
+  //           <X className="h-4 w-4 mr-2" />
+  //           Clear All Filters ({activeFiltersCount})
+  //         </Button>
+  //       )}
+  //     </div>
+  //   );
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-blue-50">
@@ -784,7 +1000,29 @@ export default function GymsPage() {
       <div className="flex flex-col lg:flex-row">
         {/* Desktop Filter Sidebar */}
         <div className="hidden lg:block w-96 bg-white/80 backdrop-blur-sm border-r border-gray-200 p-6 overflow-y-auto max-h-screen sticky top-0">
-          <FilterContent />
+          <FilterContent
+            filters={filters}
+            setFilters={setFilters}
+            activeFiltersCount={activeFiltersCount}
+            clearAllFilters={() =>
+              setFilters({
+                priceRange: [0, 20000],
+                maxDistance: 10,
+                minRating: 0,
+                facilities: [],
+              })
+            }
+            toggleFacility={(f) =>
+              setFilters((prev) => ({
+                ...prev,
+                facilities: prev.facilities.includes(f)
+                  ? prev.facilities.filter((x) => x !== f)
+                  : [...prev.facilities, f],
+              }))
+            }
+            sortBy={sortBy}
+            setSortBy={setSortBy}
+          />
         </div>
 
         {/* Main Content */}
@@ -820,7 +1058,29 @@ export default function GymsPage() {
                       fitness journey.
                     </SheetDescription>
                   </SheetHeader>
-                  <FilterContent />
+                  <FilterContent
+                    filters={filters}
+                    setFilters={setFilters}
+                    activeFiltersCount={activeFiltersCount}
+                    clearAllFilters={() =>
+                      setFilters({
+                        priceRange: [0, 20000],
+                        maxDistance: 10,
+                        minRating: 0,
+                        facilities: [],
+                      })
+                    }
+                    toggleFacility={(f) =>
+                      setFilters((prev) => ({
+                        ...prev,
+                        facilities: prev.facilities.includes(f)
+                          ? prev.facilities.filter((x) => x !== f)
+                          : [...prev.facilities, f],
+                      }))
+                    }
+                    sortBy={sortBy}
+                    setSortBy={setSortBy}
+                  />
                 </SheetContent>
               </Sheet>
 

@@ -129,10 +129,10 @@ export default function ContactPage() {
               <CardContent>
                 <p className="text-gray-600 mb-2">Visit our headquarters</p>
                 <address className="not-italic">
-                  <p className="font-semibold">GymBook HQ</p>
-                  <p>123 Fitness Street</p>
-                  <p>Suite 100</p>
-                  <p>New York, NY 10001</p>
+                  <p className="font-semibold">Fitnearby HQ</p>
+                  {/* <p>123 Fitness Street</p>
+                  <p>Suite 100</p> */}
+                  <p>Faridabad, 121004</p>
                 </address>
               </CardContent>
             </Card>

@@ -16,6 +16,7 @@ import {
   ArrowRight,
   Sparkles,
 } from "lucide-react";
+import Link from "next/link";
 
 export default function ListYourGymPage() {
   return (
@@ -65,16 +66,16 @@ export default function ListYourGymPage() {
                 size="lg"
                 className="bg-gradient-to-r from-cyan-500 via-blue-600 to-indigo-600 hover:from-cyan-600 hover:via-blue-700 hover:to-indigo-700 text-white px-10 py-6 text-xl font-bold rounded-full shadow-2xl hover:shadow-cyan-500/30 transition-all duration-500 hover:scale-110 border-2 border-white/20"
               >
-                Get Started Free
+                <Link href="/contact">Get Started Free</Link>
                 <ArrowRight className="w-6 h-6 ml-3" />
               </Button>
-              <Button
+              {/* <Button
                 variant="outline"
                 size="lg"
                 className="border-white/30 text-white hover:bg-white/10 px-10 py-6 text-xl font-semibold rounded-full transition-all duration-300 backdrop-blur-sm bg-transparent"
               >
-                Learn More
-              </Button>
+                <Link href="/listgym">Learn More</Link>
+              </Button> */}
             </div>
 
             {/* Stats */}
@@ -180,9 +181,9 @@ export default function ListYourGymPage() {
                     </div>
                   </div>
 
-                  <Button className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white font-bold py-4 text-lg rounded-full transition-all duration-300 shadow-lg hover:shadow-xl">
+                  {/* <Button className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white font-bold py-4 text-lg rounded-full transition-all duration-300 shadow-lg hover:shadow-xl">
                     Start Free
-                  </Button>
+                  </Button> */}
                 </CardContent>
               </Card>
 
@@ -248,10 +249,10 @@ export default function ListYourGymPage() {
                     </div>
                   </div>
 
-                  <Button className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold py-4 text-lg rounded-full transition-all duration-300 shadow-lg hover:shadow-xl">
+                  {/* <Button className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold py-4 text-lg rounded-full transition-all duration-300 shadow-lg hover:shadow-xl">
                     Go Premium
                     <ArrowRight className="w-5 h-5 ml-2" />
-                  </Button>
+                  </Button> */}
                 </CardContent>
               </Card>
             </div>
@@ -354,38 +355,42 @@ export default function ListYourGymPage() {
               <div className="grid md:grid-cols-2 gap-8 max-w-2xl mx-auto mb-12">
                 <Card className="group relative border-0 shadow-xl hover:shadow-2xl transition-all duration-500 hover:-translate-y-4 bg-gradient-to-br from-white via-blue-50/50 to-white overflow-hidden">
                   <div className="absolute inset-0 bg-gradient-to-br from-blue-600/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                  <CardContent className="p-8 relative">
-                    <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl w-16 h-16 flex items-center justify-center mx-auto mb-6 shadow-lg group-hover:scale-110 transition-transform duration-300">
-                      <Mail className="w-8 h-8 text-white" />
-                    </div>
-                    <h3 className="text-2xl font-bold mb-3 text-gray-900">
-                      Email Us
-                    </h3>
-                    <p className="text-gray-600 mb-4 text-lg">
-                      Get in touch via email
-                    </p>
-                    <p className="text-blue-600 font-bold text-lg">
-                      Fitnearby.as@gmail.com
-                    </p>
-                  </CardContent>
+                  <Link href="mailto:Fitnearby.as@gmail.com">
+                    <CardContent className="p-8 relative">
+                      <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl w-16 h-16 flex items-center justify-center mx-auto mb-6 shadow-lg group-hover:scale-110 transition-transform duration-300">
+                        <Mail className="w-8 h-8 text-white" />
+                      </div>
+                      <h3 className="text-2xl font-bold mb-3 text-gray-900">
+                        Email Us
+                      </h3>
+                      <p className="text-gray-600 mb-4 text-lg">
+                        Get in touch via email
+                      </p>
+                      <p className="text-blue-600 font-bold text-lg">
+                        Fitnearby.as@gmail.com
+                      </p>
+                    </CardContent>
+                  </Link>
                 </Card>
 
                 <Card className="group relative border-0 shadow-xl hover:shadow-2xl transition-all duration-500 hover:-translate-y-4 bg-gradient-to-br from-white via-pink-50/50 to-white overflow-hidden">
-                  <div className="absolute inset-0 bg-gradient-to-br from-pink-600/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                  <CardContent className="p-8 relative">
-                    <div className="bg-gradient-to-br from-pink-500 to-pink-600 rounded-2xl w-16 h-16 flex items-center justify-center mx-auto mb-6 shadow-lg group-hover:scale-110 transition-transform duration-300">
-                      <Instagram className="w-8 h-8 text-white" />
-                    </div>
-                    <h3 className="text-2xl font-bold mb-3 text-gray-900">
-                      Follow Us
-                    </h3>
-                    <p className="text-gray-600 mb-4 text-lg">
-                      Connect on Instagram
-                    </p>
-                    <p className="text-pink-600 font-bold text-lg">
-                      @fitnearby_
-                    </p>
-                  </CardContent>
+                  <Link href="https://www.instagram.com/fitnearby__?igsh=NHFpMHloems3cHVs">
+                    <div className="absolute inset-0 bg-gradient-to-br from-pink-600/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                    <CardContent className="p-8 relative">
+                      <div className="bg-gradient-to-br from-pink-500 to-pink-600 rounded-2xl w-16 h-16 flex items-center justify-center mx-auto mb-6 shadow-lg group-hover:scale-110 transition-transform duration-300">
+                        <Instagram className="w-8 h-8 text-white" />
+                      </div>
+                      <h3 className="text-2xl font-bold mb-3 text-gray-900">
+                        Follow Us
+                      </h3>
+                      <p className="text-gray-600 mb-4 text-lg">
+                        Connect on Instagram
+                      </p>
+                      <p className="text-pink-600 font-bold text-lg">
+                        @fitnearby_
+                      </p>
+                    </CardContent>
+                  </Link>
                 </Card>
               </div>
 
@@ -393,7 +398,7 @@ export default function ListYourGymPage() {
                 size="lg"
                 className="bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 hover:from-blue-700 hover:via-purple-700 hover:to-pink-700 text-white px-12 py-6 text-xl font-bold rounded-full shadow-2xl hover:shadow-blue-500/25 transition-all duration-500 hover:scale-105"
               >
-                Contact Us Now
+                <Link href="/contact">Contact Us Now</Link>
                 <ArrowRight className="w-6 h-6 ml-3" />
               </Button>
             </div>
