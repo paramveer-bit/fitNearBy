@@ -45,7 +45,7 @@ export default function GalleryPage({
   }, [selectedImage]);
 
   return (
-    <div className="w-full h-full flex flex-col p-2 sm:p-4 lg:p-6">
+    <div className="w-full h-full flex flex-col p-2 sm:p-4 lg:p-6 max-h-screen">
       {/* Main Content */}
       <div className="flex-1 flex flex-col max-w-7xl mx-auto w-full">
         {/* Main Image Display */}
@@ -131,27 +131,8 @@ export default function GalleryPage({
                 ))}
               </div>
             </div>
-
-            {/* Scroll indicators for mobile */}
-            <div className="flex justify-center mt-2 sm:hidden">
-              <div className="flex gap-1">
-                {Array.from({ length: Math.ceil(images.length / 4) }).map(
-                  (_, index) => (
-                    <div
-                      key={index}
-                      className="w-1.5 h-1.5 rounded-full bg-muted-foreground/30"
-                    />
-                  )
-                )}
-              </div>
-            </div>
           </div>
         )}
-      </div>
-
-      {/* Mobile swipe hint */}
-      <div className="text-center text-xs text-muted-foreground mt-2 sm:hidden">
-        Swipe left or right to navigate • Tap thumbnails to jump
       </div>
     </div>
   );
