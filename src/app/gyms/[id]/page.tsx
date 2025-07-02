@@ -51,7 +51,7 @@ export default function GymDetailPage() {
             withCredentials: true,
           }
         );
-        console.log("Gym data:", res.data);
+        // console.log("Gym data:", res.data);
         setGym(res.data.data);
       } catch (error: unknown) {
         if (axios.isAxiosError(error) && error.response) {

@@ -221,14 +221,14 @@ export default function BookingPage() {
       }
 
       const data = res.data.data;
-      console.log("Order Data:", data);
+      // console.log("Order Data:", data);
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const payment = new (window as any).Razorpay({
         key: process.env.NEXT_PUBLIC_RAZORPAY_KEY,
         order_id: data.order.id,
         ...data.order,
         handler: async (response: RazorpayPaymentResponse) => {
-          console.log("Payment Response:++++++++++++++++++++++++", response);
+          // console.log("Payment Response:++++++++++++++++++++++++", response);
           const options = {
             razorpay_order_id: response.razorpay_order_id,
             razorpay_payment_id: response.razorpay_payment_id,
@@ -243,10 +243,10 @@ export default function BookingPage() {
               withCredentials: true,
             }
           );
-          console.log(
-            "Payment Verification Response:------------------",
-            res.data
-          );
+          // console.log(
+          //   "Payment Verification Response:------------------",
+          //   res.data
+          // );
 
           if (res.data.data) {
             alert("Payment successful! Your booking is confirmed.");
@@ -262,7 +262,7 @@ export default function BookingPage() {
     }
 
     // Here you would typically send the booking data to your backend
-    console.log("Booking Data:", bookingData);
+    // console.log("Booking Data:", bookingData);
     handleNextStep();
   };
   if (loading) {

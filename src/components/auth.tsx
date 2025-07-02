@@ -62,7 +62,7 @@ export default function AuthDialog({
         { email: loginData.email.toLowerCase(), password: loginData.password },
         { withCredentials: true }
       );
-      console.log(res);
+      // console.log(res);
     } catch (error) {
       if (axios.isAxiosError(error) && error.response) {
         // Show exactly the backend's message
@@ -79,13 +79,13 @@ export default function AuthDialog({
     await fetchUser();
 
     if (type === "book") {
-      console.log("Booking gym with ID:", id);
+      // console.log("Booking gym with ID:", id);
 
       router.push(`/book/${id}`);
       onOpenChange(false);
       return;
     }
-    console.log("Redirecting to profile page");
+    // console.log("Redirecting to profile page");
     window.location.reload();
     onOpenChange(false);
   };
@@ -95,7 +95,7 @@ export default function AuthDialog({
 
     if (!isOtpStage) {
       // First stage: Initial signup
-      console.log("Initial signup data:", signupData);
+      // console.log("Initial signup data:", signupData);
 
       const signupSchema = z.object({
         name: z.string().min(1, "Name is required"),
@@ -132,7 +132,7 @@ export default function AuthDialog({
           }
         );
 
-        console.log("OTP sent successfully:", res.data);
+        // console.log("OTP sent successfully:", res.data);
         toast.success("OTP sent to your email/phone");
         setIsOtpStage(true); // Move to OTP verification stage
       } catch (error: unknown) {
@@ -148,7 +148,7 @@ export default function AuthDialog({
       }
     } else {
       // Second stage: OTP verification
-      console.log("Verifying OTP:", signupData.otp);
+      // console.log("Verifying OTP:", signupData.otp);
 
       if (!signupData.otp) {
         toast.error("Please enter the OTP");
@@ -167,13 +167,13 @@ export default function AuthDialog({
           { withCredentials: true }
         );
 
-        console.log("Signup completed successfully:", res.data);
+        // console.log("Signup completed successfully:", res.data);
         toast.success("Account created successfully!");
 
         await fetchUser();
 
         if (type === "book") {
-          console.log("Booking gym with ID:", id);
+          // console.log("Booking gym with ID:", id);
           router.push(`/book/${id}`);
           setSignupData({
             name: "",
@@ -220,7 +220,7 @@ export default function AuthDialog({
         `${process.env.NEXT_PUBLIC_BASEURL}/user/auth/isSignedIn`,
         { withCredentials: true }
       );
-      console.log("User data:", res.data);
+      // console.log("User data:", res.data);
       setUser(res.data.data);
     } catch (error: unknown) {
       if (axios.isAxiosError(error) && error.response) {
