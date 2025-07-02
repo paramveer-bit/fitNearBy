@@ -67,12 +67,53 @@ const getDuration = (type: string) => {
       return "Unknown Duration";
   }
 };
+const sortPlans = (plans: Plan[]) => {
+  const typeOrder = {
+    TRIAL: 1,
+    MONTHLY: 2,
+    QUARTERLY: 3,
+    HALF_YEARLY: 4,
+    YEARLY: 5,
+  };
+
+  const getNameCategory = (name: string) => {
+    const nameLower = name.toLowerCase();
+
+    if (nameLower.includes("trial")) return 1;
+    if (nameLower.includes("male") && !nameLower.includes("female")) return 2;
+    if (nameLower.includes("female")) return 3;
+    if (nameLower.includes("couple")) return 4;
+
+    // If no keywords found, put at the end
+    return 999;
+  };
+
+  return plans.sort((a, b) => {
+    // First sort by type
+    const typeComparison = typeOrder[a.type] - typeOrder[b.type];
+    if (typeComparison !== 0) {
+      return typeComparison;
+    }
+
+    // Then sort by name within the same type
+    const aNameCategory = getNameCategory(a.name);
+    const bNameCategory = getNameCategory(b.name);
+    if (aNameCategory !== bNameCategory) {
+      return aNameCategory - bNameCategory;
+    }
+
+    // If same category, sort alphabetically
+    return a.name.localeCompare(b.name);
+  });
+};
 
 function GymPlanes({ plans }: { plans: Plan[] }) {
+  const sortedPlans = sortPlans([...plans]);
+
   return (
     <>
       <div className="space-y-4">
-        {plans.map((plan) => (
+        {sortedPlans.map((plan) => (
           <div
             key={plan.id}
             className={`relative p-6 rounded-lg border-2 cursor-pointer transition-all`}

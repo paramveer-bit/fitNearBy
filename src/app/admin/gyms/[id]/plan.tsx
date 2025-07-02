@@ -52,8 +52,8 @@ const PlanType: PlanType[] = [
   "TRIAL",
   "MONTHLY",
   "QUARTERLY",
-  "YEARLY",
   "HALF_YEARLY",
+  "YEARLY",
 ];
 function Plans({ id }: { id: string }) {
   const [open, setOpen] = useState(false);
@@ -89,6 +89,7 @@ function Plans({ id }: { id: string }) {
     }
   };
   const removeFeature = (feature: string) => {
+    console.log("Removing feature:", feature);
     setFormData((prev) => ({
       ...prev,
       featured: prev.featured.filter((f) => f !== feature),
@@ -357,10 +358,14 @@ function Plans({ id }: { id: string }) {
                     className="flex items-center gap-1"
                   >
                     {feature}
-                    <X
-                      className="h-3 w-3 cursor-pointer"
+                    <button
+                      type="button"
+                      className="p-0 m-0 bg-transparent border-none cursor-pointer"
                       onClick={() => removeFeature(feature)}
-                    />
+                      aria-label="Remove feature"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
                   </Badge>
                 ))}
               </div>
