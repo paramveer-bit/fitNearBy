@@ -57,7 +57,7 @@ export default function AuthDialog({
     e.preventDefault();
     try {
       setSigning(true);
-      const res = await axios.post(
+      await axios.post(
         `${process.env.NEXT_PUBLIC_BASEURL}/user/auth/signIn`,
         { email: loginData.email.toLowerCase(), password: loginData.password },
         { withCredentials: true }
@@ -122,7 +122,7 @@ export default function AuthDialog({
       try {
         setIsSigningUp(true);
         // Make API call to send OTP
-        const res = await axios.post(
+        await axios.post(
           `${process.env.NEXT_PUBLIC_BASEURL}/user/auth/signup`,
           {
             name: signupData.name,
@@ -158,7 +158,7 @@ export default function AuthDialog({
       try {
         setIsSigningUp(true);
         // Make API call to verify OTP and complete signup
-        const res = await axios.post(
+        await axios.post(
           `${process.env.NEXT_PUBLIC_BASEURL}/user/auth/verifyUser`,
           {
             email: signupData.email.toLowerCase(),
