@@ -1,5 +1,7 @@
 "use client";
 
+import type React from "react";
+
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import { ChevronLeft, ChevronRight, X } from "lucide-react";
@@ -14,6 +16,10 @@ export default function GalleryPage({
   toggleDialog: () => void;
 }) {
   const [selectedImage, setSelectedImage] = useState(images[0]);
+  const [touchStart, setTouchStart] = useState<number | null>(null);
+  const [touchEnd, setTouchEnd] = useState<number | null>(null);
+
+  const minSwipeDistance = 50;
 
   const handlePrevious = () => {
     const currentIndex = images.findIndex((img) => img.id === selectedImage.id);
@@ -26,6 +32,31 @@ export default function GalleryPage({
     const currentIndex = images.findIndex((img) => img.id === selectedImage.id);
     const nextIndex = currentIndex < images.length - 1 ? currentIndex + 1 : 0;
     setSelectedImage(images[nextIndex]);
+  };
+
+  // Touch handlers for mobile swipe
+  const onTouchStart = (e: React.TouchEvent) => {
+    setTouchEnd(null);
+    setTouchStart(e.targetTouches[0].clientX);
+  };
+
+  const onTouchMove = (e: React.TouchEvent) => {
+    setTouchEnd(e.targetTouches[0].clientX);
+  };
+
+  const onTouchEnd = () => {
+    if (!touchStart || !touchEnd) return;
+
+    const distance = touchStart - touchEnd;
+    const isLeftSwipe = distance > minSwipeDistance;
+    const isRightSwipe = distance < -minSwipeDistance;
+
+    if (isLeftSwipe) {
+      handleNext();
+    }
+    if (isRightSwipe) {
+      handlePrevious();
+    }
   };
 
   // Handle keyboard navigation
@@ -45,15 +76,20 @@ export default function GalleryPage({
   }, [selectedImage]);
 
   return (
-    <div className="w-full h-full flex flex-col p-2 sm:p-4 lg:p-6 max-h-screen">
+    <div className="w-full h-full flex flex-col p-2 sm:p-4 lg:p-6 max-h-screen bg-white">
       {/* Main Content */}
       <div className="flex-1 flex flex-col max-w-7xl mx-auto w-full">
         {/* Main Image Display */}
         <div className="relative flex-1 mb-3 sm:mb-4 lg:mb-6">
-          <div className="relative w-full h-full min-h-[50vh] sm:min-h-[60vh] lg:min-h-[70vh] max-h-[80vh] bg-muted rounded-lg overflow-hidden">
+          <div
+            className="relative w-full h-full min-h-[50vh] sm:min-h-[60vh] lg:min-h-[70vh] max-h-[80vh] bg-muted rounded-lg overflow-hidden"
+            onTouchStart={onTouchStart}
+            onTouchMove={onTouchMove}
+            onTouchEnd={onTouchEnd}
+          >
             <Image
               src={selectedImage.url || "/placeholder.svg"}
-              alt="GYM Image"
+              alt={"GYM Image"}
               fill
               className="object-contain sm:object-cover"
               priority
@@ -133,6 +169,11 @@ export default function GalleryPage({
             </div>
           </div>
         )}
+      </div>
+
+      {/* Mobile swipe hint */}
+      <div className="text-center text-xs text-muted-foreground mt-2 sm:hidden">
+        Swipe left or right to navigate • Tap thumbnails to jump
       </div>
     </div>
   );
