@@ -18,6 +18,7 @@ import {
   Zap,
   AlertCircle,
   RefreshCw,
+  Loader,
 } from "lucide-react";
 import GymCard from "@/components/home/gymCard";
 import {
@@ -51,9 +52,19 @@ const allFacilities = [
   "Group Classes",
   "Swimming Pool",
   "Personal Training",
-  "Yoga Studio",
+  "Functional Training",
+  "Dance Fitness",
+  "Pilates",
+  "MMA",
+  "Sauna & Steam",
+  "Cafeteria",
+  "Music",
+  "Yoga",
   "Locker Rooms",
   "Nutrition Counseling",
+  "CrossFit",
+  "Zumba",
+  "Kickboxing",
 ];
 
 interface Filters {
@@ -291,6 +302,9 @@ const FilterContent = memo(function FilterContent({
 export default function GymsPage() {
   const [gyms, setGyms] = useState<GYM[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
+  const [isSearching, setIsSearching] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+
   const [locationState, setLocationState] = useState<LocationState>({
     lat: null,
     lng: null,
@@ -299,6 +313,10 @@ export default function GymsPage() {
     loading: false,
     permissionDenied: false,
   });
+
+  const [manualLocation, setManualLocation] = useState("");
+  const [showSuggestions, setShowSuggestions] = useState(false);
+
   const [sortBy, setSortBy] = useState("distance");
   const [filters, setFilters] = useState<Filters>({
     priceRange: [0, 20000],
@@ -308,10 +326,6 @@ export default function GymsPage() {
   });
   const [activeFiltersCount, setActiveFiltersCount] = useState(0);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
-  const [manualLocation, setManualLocation] = useState("");
-  const [isSearching, setIsSearching] = useState(false);
-  const [showSuggestions, setShowSuggestions] = useState(false);
-
   // Enhanced geolocation function
   const getCurrentLocation = async (): Promise<void> => {
     if (!navigator.geolocation) {
@@ -416,6 +430,7 @@ export default function GymsPage() {
     try {
       // First, try to geocode the location using a geocoding service
       // For this example, I'll use a simple approach with OpenStreetMap Nominatim
+      setIsLoading(true);
       const geocodeResponse = await fetch(
         `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(
           locationQuery
@@ -482,6 +497,7 @@ export default function GymsPage() {
       }
     } finally {
       setIsSearching(false);
+      setIsLoading(false);
     }
   };
 
@@ -537,6 +553,7 @@ export default function GymsPage() {
   useEffect(() => {
     const fetchGyms = async () => {
       try {
+        setIsLoading(true);
         let res;
 
         if (locationState.lat && locationState.lng) {
@@ -562,6 +579,8 @@ export default function GymsPage() {
         } else {
           toast.error("An unexpected error occurred while fetching gyms");
         }
+      } finally {
+        setIsLoading(false);
       }
     };
 
@@ -1145,80 +1164,87 @@ export default function GymsPage() {
             </Card>
           )}
 
-          {/* Results Header */}
-          <div className="mb-8 hidden sm:block">
-            <Card className="border-0 shadow-sm bg-gradient-to-r from-white to-gray-50">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h2 className="text-2xl font-bold text-gray-900 mb-1">
-                      {sortedGyms.length} Gym
-                      {sortedGyms.length !== 1 ? "s" : ""} Found
-                    </h2>
-                    <p className="text-gray-600">
-                      Discover the best fitness centers in your area
-                      {activeFiltersCount > 0 && (
-                        <span className="ml-2 text-sm font-medium text-blue-600">
-                          • {activeFiltersCount} filter
-                          {activeFiltersCount !== 1 ? "s" : ""} applied
-                        </span>
-                      )}
-                    </p>
-                  </div>
-                  <div className="hidden sm:flex items-center gap-2 text-sm text-gray-500">
-                    <TrendingUp className="h-4 w-4" />
-                    Sorted by {sortBy}
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
           {/* Gym Cards Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-2 2xl:grid-cols-2 gap-6 lg:gap-8">
-            {sortedGyms.map((gym) => (
-              <div
-                key={gym.id}
-                className="transform hover:scale-[1.02] transition-transform duration-200"
-              >
-                <GymCard gym={gym} />
+          {isLoading ? (
+            <div className="flex items-center justify-center min-h-[300px]">
+              <Loader className="h-10 w-10 animate-spin text-blue-500" />
+            </div>
+          ) : (
+            <>
+              {/* Results Header */}
+              <div className="mb-8 hidden sm:block">
+                <Card className="border-0 shadow-sm bg-gradient-to-r from-white to-gray-50">
+                  <CardContent className="p-6">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h2 className="text-2xl font-bold text-gray-900 mb-1">
+                          {sortedGyms.length} Gym
+                          {sortedGyms.length !== 1 ? "s" : ""} Found
+                        </h2>
+                        <p className="text-gray-600">
+                          Discover the best fitness centers in your area
+                          {activeFiltersCount > 0 && (
+                            <span className="ml-2 text-sm font-medium text-blue-600">
+                              • {activeFiltersCount} filter
+                              {activeFiltersCount !== 1 ? "s" : ""} applied
+                            </span>
+                          )}
+                        </p>
+                      </div>
+                      <div className="hidden sm:flex items-center gap-2 text-sm text-gray-500">
+                        <TrendingUp className="h-4 w-4" />
+                        Sorted by {sortBy}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
               </div>
-            ))}
-          </div>
-
-          {/* No Results */}
-          {sortedGyms.length === 0 && !locationState.loading && (
-            <Card className="border-0 shadow-lg bg-gradient-to-br from-gray-50 to-white">
-              <CardContent className="p-12 text-center">
-                <div className="w-20 h-20 bg-gradient-to-br from-gray-200 to-gray-300 rounded-full flex items-center justify-center mx-auto mb-6">
-                  <Search className="h-8 w-8 text-gray-500" />
-                </div>
-                <h3 className="text-2xl font-bold text-gray-900 mb-4">
-                  No gyms found
-                </h3>
-                <p className="text-gray-600 mb-8 max-w-md mx-auto">
-                  We couldn&apos;t find any gyms matching your search criteria.
-                  Try adjusting your filters or search terms.
-                </p>
-                <div className="flex flex-col sm:flex-row gap-3 justify-center">
-                  <Button
-                    variant="outline"
-                    onClick={() => setSearchTerm("")}
-                    className="h-12 px-6 border-2 hover:border-blue-300"
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-2 2xl:grid-cols-2 gap-6 lg:gap-8">
+                {sortedGyms.map((gym) => (
+                  <div
+                    key={gym.id}
+                    className="transform hover:scale-[1.02] transition-transform duration-200"
                   >
-                    Clear Search
-                  </Button>
-                  {activeFiltersCount > 0 && (
-                    <Button
-                      onClick={clearAllFilters}
-                      className="h-12 px-6 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
-                    >
-                      Clear All Filters
-                    </Button>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
+                    <GymCard gym={gym} />
+                  </div>
+                ))}
+              </div>
+
+              {/* No Results */}
+              {sortedGyms.length === 0 && !locationState.loading && (
+                <Card className="border-0 shadow-lg bg-gradient-to-br from-gray-50 to-white">
+                  <CardContent className="p-12 text-center">
+                    <div className="w-20 h-20 bg-gradient-to-br from-gray-200 to-gray-300 rounded-full flex items-center justify-center mx-auto mb-6">
+                      <Search className="h-8 w-8 text-gray-500" />
+                    </div>
+                    <h3 className="text-2xl font-bold text-gray-900 mb-4">
+                      No gyms found
+                    </h3>
+                    <p className="text-gray-600 mb-8 max-w-md mx-auto">
+                      We couldn&apos;t find any gyms matching your search
+                      criteria. Try adjusting your filters or search terms.
+                    </p>
+                    <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                      <Button
+                        variant="outline"
+                        onClick={() => setSearchTerm("")}
+                        className="h-12 px-6 border-2 hover:border-blue-300"
+                      >
+                        Clear Search
+                      </Button>
+                      {activeFiltersCount > 0 && (
+                        <Button
+                          onClick={clearAllFilters}
+                          className="h-12 px-6 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+                        >
+                          Clear All Filters
+                        </Button>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+            </>
           )}
         </div>
       </div>
