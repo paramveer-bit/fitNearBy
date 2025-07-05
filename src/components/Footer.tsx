@@ -49,6 +49,14 @@ export default function Footer() {
                   Profile
                 </Link>
               </li>
+              <li>
+                <Link
+                  href="/termsAndConditions"
+                  className="text-gray-300 hover:text-white"
+                >
+                  Terms and Conditions
+                </Link>
+              </li>
             </ul>
           </div>
 
