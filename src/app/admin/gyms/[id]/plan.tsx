@@ -379,7 +379,9 @@ function Plans({ id }: { id: string }) {
             >
               Cancel
             </Button>
-            <Button onClick={handleSave}>Save</Button>
+            <Button onClick={handleSave} disabled={isSubmitting}>
+              Save
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
