@@ -230,7 +230,7 @@ export default function GymDetailPage() {
                             <div key={day} className="flex justify-between">
                               <span className="font-medium">{day}</span>
                               <span className="text-gray-600">
-                                {hours
+                                {hours && hours?.openAt !== "00:00"
                                   ? `${hours.openAt} - ${hours.closeAt}`
                                   : "Closed"}
                               </span>

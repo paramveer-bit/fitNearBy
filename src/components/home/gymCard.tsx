@@ -60,7 +60,7 @@ function GymCard({ gym }: { gym: GYM }) {
               <CardTitle className="text-lg sm:text-xl flex items-center">
                 <span className="truncate">{gym.name}</span>
                 <Image
-                  src={gym.logoUrl}
+                  src={gym.logoUrl || "/placeholder.svg?height=24&width=24"}
                   alt="Verified"
                   width={24}
                   height={24}
