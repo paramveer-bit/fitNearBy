@@ -52,7 +52,7 @@ function TrainerPage({ id }: { id: string }) {
   const [submitting, setSubmitting] = useState(false);
   const [trainers, setTrainers] = useState<Trainer[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-
+  const [deleteing, setDeleting] = useState(false);
   const handleInputChange = <K extends keyof TrainerFormData>(
     field: K,
     value: TrainerFormData[K]
@@ -105,10 +105,12 @@ function TrainerPage({ id }: { id: string }) {
   };
 
   const handleSubmit = async () => {
+    const data = formData;
     try {
       setSubmitting(true);
       if (!selectedFile) {
         toast.error("Select Image First");
+        setSubmitting(false);
         return;
       }
       const res = await axios.post(
@@ -121,7 +123,7 @@ function TrainerPage({ id }: { id: string }) {
           },
         }
       );
-      handleInputChange("profileUrl", res.data.data.url);
+      data.profileUrl = res.data.data.url;
     } catch (error: unknown) {
       if (axios.isAxiosError(error) && error.response) {
         // Show exactly the backend's message
@@ -140,7 +142,8 @@ function TrainerPage({ id }: { id: string }) {
         formData,
         { withCredentials: true }
       );
-      console.log(res.data);
+      setTrainers((prev) => [...prev, res.data.data]);
+      toast.success("Trainer added successfully");
       handleCancel();
     } catch (error) {
       console.error(error);
@@ -148,10 +151,13 @@ function TrainerPage({ id }: { id: string }) {
     } finally {
       setSubmitting(false);
     }
+    // reload page
+    // window.location.reload();
   };
 
   const handelDelete = async (trainerId: string) => {
     try {
+      setDeleting(true);
       await axios.delete(
         `${process.env.NEXT_PUBLIC_BASEURL}/trainers/delete/${trainerId}`,
         { withCredentials: true }
@@ -166,6 +172,8 @@ function TrainerPage({ id }: { id: string }) {
         // Fallback for network/CORS/unexpected errors
         toast.error("An unexpected error occurred");
       }
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -215,6 +223,7 @@ function TrainerPage({ id }: { id: string }) {
                 <div className="w-full relative group" key={trainer.id}>
                   <TrainerCard key={trainer.id} trainer={trainer} />
                   <Button
+                    disabled={deleteing}
                     onClick={() => handelDelete(trainer.id)}
                     variant="destructive"
                     size="icon"
@@ -240,7 +249,7 @@ function TrainerPage({ id }: { id: string }) {
       </Card>
 
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="sm:max-w-[500px]">
+        <DialogContent className="sm:max-w-[500px] overflow-y-scroll">
           <DialogHeader>
             <DialogTitle>Create New Plan</DialogTitle>
             <DialogDescription>
@@ -323,13 +332,15 @@ function TrainerPage({ id }: { id: string }) {
             {/* Bio */}
             <div className="space-y-2">
               <Label htmlFor="bio">Bio</Label>
-              <Textarea
-                id="bio"
-                value={formData.bio}
-                onChange={(e) => handleInputChange("bio", e.target.value)}
-                className="bg-gray-50 min-h-[100px] resize-none"
-                placeholder="Enter something about Trainer"
-              />
+              <div className="max-h-32 overflow-y-auto">
+                <Textarea
+                  id="bio"
+                  value={formData.bio}
+                  onChange={(e) => handleInputChange("bio", e.target.value)}
+                  className="bg-gray-50 min-h-[100px] resize-none"
+                  placeholder="Enter something about Trainer"
+                />
+              </div>
             </div>
 
             {/* Features */}
